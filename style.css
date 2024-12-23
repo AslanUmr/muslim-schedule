@@ -1,0 +1,261 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+  color: #333;
+  background-color: #f4f4f9;
+  padding: 20px;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+header h1 {
+  font-size: 2.5rem;
+  color: #00796b;
+}
+
+header p {
+  font-size: 1.2rem;
+  color: #555;
+}
+
+.current-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.current-time {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #00796b;
+}
+
+.current-location {
+  font-size: 1.2rem;
+  color: #555;
+}
+
+#prayer-times {
+  background: #ffffff;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+#prayer-times h2 {
+  margin-bottom: 10px;
+  font-size: 1.5rem;
+  color: #00796b;
+}
+
+.prayer-block {
+  background: #f8f8f8;
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+}
+
+.prayer-block.current {
+  border: 2px solid #00796b;
+  background: #e0f2f1;
+}
+
+.prayer-block h3 {
+  color: #00796b;
+  margin-bottom: 10px;
+}
+
+.time-blocks {
+  margin-top: 10px;
+}
+
+.time-block {
+  background: #fff;
+  padding: 15px;
+  margin: 5px 0;
+  border-radius: 4px;
+  border-left: 4px solid #00796b;
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.time-block.split {
+  border-left-color: #ffa726;
+}
+
+.time-block .actions {
+  display: flex;
+  gap: 5px;
+}
+
+.time-block .edit-btn {
+  background: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.time-block .remove-btn {
+  background: #ff5252;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.free-time-block {
+  background: #f5f5f5;
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 4px;
+  border-left: 4px solid #9e9e9e;
+  color: #666;
+  font-style: italic;
+}
+
+.conflict-indicator {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #ff5252;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 0 4px 0 4px;
+  font-size: 0.8rem;
+}
+
+.view-switcher {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.view-switcher button {
+  background: #fff;
+  color: #00796b;
+  border: 1px solid #00796b;
+  padding: 8px 16px;
+  margin: 0 5px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.view-switcher button.active {
+  background: #00796b;
+  color: #fff;
+}
+
+.time-block[data-type="work"] { border-left-color: #2196f3; }
+.time-block[data-type="study"] { border-left-color: #4caf50; }
+.time-block[data-type="personal"] { border-left-color: #9c27b0; }
+.time-block[data-type="other"] { border-left-color: #ff9800; }
+
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  z-index: 1000;
+  width: 90%;
+  max-width: 500px;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.hidden {
+  display: none;
+}
+
+.error-message {
+  color: #ff1744;
+  margin-top: 5px;
+  font-size: 0.9rem;
+}
+
+button {
+  background: #00796b;
+  color: #fff;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+button:hover {
+  background: #005b4f;
+}
+
+input, select {
+  width: 100%;
+  padding: 8px;
+  margin: 5px 0 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+label {
+  font-weight: bold;
+  color: #555;
+}
+.prayer-countdown {
+  font-size: 1.2rem;
+  color: #00796b;
+  font-weight: bold;
+}
+
+.time-block.current-block {
+  background-color: #e0f2f1;
+  border: 2px solid #00796b;
+  border-left-width: 4px;
+}
+
+.current-info {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: center;
+  gap: 20px;
+  text-align: center;
+}
+
+.current-location {
+  text-align: right;
+}

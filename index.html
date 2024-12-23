@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Muslim Time Management App</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header>
+    <h1>Muslim Time Management App</h1>
+    <p>Organize your day around prayer times</p>
+  </header>
+
+  <div class="current-info">
+    <div class="current-time" id="current-time">--:--:--</div>
+    <div class="current-location" id="current-location">Loading location...</div>
+  </div>
+
+  <div class="view-switcher">
+    <button class="active" data-view="daily">Daily View</button>
+    <button data-view="weekly">Weekly View</button>
+  </div>
+
+  <section id="prayer-times">
+    <h2>Prayer Times</h2>
+    <div id="prayer-blocks"></div>
+  </section>
+
+  <button id="add-block-btn">Add New Block</button>
+
+  <div id="modal-overlay" class="modal-overlay hidden"></div>
+  <div id="add-block-modal" class="modal hidden">
+    <h3 id="modal-title">Add Time Block</h3>
+    <form id="add-block-form">
+      <label for="block-title">Title:</label>
+      <input type="text" id="block-title" required>
+      
+      <label for="activity-type">Activity Type:</label>
+      <select id="activity-type" required>
+        <option value="work">Work</option>
+        <option value="study">Study</option>
+        <option value="personal">Personal</option>
+        <option value="other">Other</option>
+      </select>
+
+      <label for="block-start">Start Time:</label>
+      <input type="time" id="block-start" required>
+      
+      <label for="block-end">End Time:</label>
+      <input type="time" id="block-end" required>
+      
+      <button type="submit" id="submit-btn">Add</button>
+      <button type="button" id="cancel-btn" style="background: #999;">Cancel</button>
+    </form>
+  </div>
+      <script src="./script.js"></script>
+</body>
