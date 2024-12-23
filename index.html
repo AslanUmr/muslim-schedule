@@ -14,7 +14,7 @@
 
   <div class="current-info">
     <div class="current-time" id="current-time">--:--:--</div>
-    <div class="current-location" id="current-location">Loading location...</div>
+    <div class="prayer-countdown"></div>
   </div>
 
   <div class="view-switcher">
@@ -23,11 +23,12 @@
   </div>
   <button id="add-block-btn">Add New Block</button>
   <section id="prayer-times">
-    <h2>Prayer Times</h2>
+    <div class="prayer-header">
+      <h2>Prayer Times</h2>
+      <div class="current-location" id="current-location">Loading location...</div>
+    </div>
     <div id="prayer-blocks"></div>
   </section>
-
-
 
   <div id="modal-overlay" class="modal-overlay hidden"></div>
   <div id="add-block-modal" class="modal hidden">
@@ -55,7 +56,7 @@
     </form>
   </div>
   <footer>
-    <p> Made by Aslan Umarov</p>
+    <p>Made by Aslan Umarov</p>
   </footer>
-      <script src="./script.js"></script>
-</body>
+  <script src="./script.js"></script>
+</body></html>
