@@ -427,53 +427,14 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   modalOverlay.addEventListener('click', closeModal);
 
-  addBlockForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const title = document.getElementById('block-title').value;
-    const type = document.getElementById('activity-type').value;
-    const startTime = document.getElementById('block-start').value;
-    const endTime = document.getElementById('block-end').value;
 
-    if (hasTimeConflict(startTime, endTime, editingBlockId)) {
-      showError('This time slot is already occupied');
-      return;
-    }
-
-    if (editingBlockId) {
-      const updatedBlock = {
-        id: editingBlockId,
-        title,
-        type,
-        startTime,
-        endTime,
-        prayer: findPrayerPeriod(startTime)
-      };
-      
-      timeBlocks = timeBlocks.map(block => 
-        block.id === editingBlockId ? updatedBlock : block
-      );
-    } else {
-      const splits = splitActivityAcrossPrayers(title, startTime, endTime);
-      splits.forEach(split => {
-        const blockId = Date.now() + Math.random();
-        timeBlocks.push({
-          id: blockId,
-          type,
-          ...split
-        });
-      });
-    }
-
-    updateDisplay();
-    closeModal();
-  });
 
   document.addEventListener('click', (e) => {
     if (e.target.classList.contains('edit-btn')) {
-      const blockId = e.target.closest('.time-block').dataset.id;
+      const blockId = parseFloat(e.target.closest('.time-block').dataset.id);
       editBlock(blockId);
     } else if (e.target.classList.contains('remove-btn')) {
-      const blockId = e.target.closest('.time-block').dataset.id;
+      const blockId = parseFloat(e.target.closest('.time-block').dataset.id);
       removeBlock(blockId);
     }
   });
