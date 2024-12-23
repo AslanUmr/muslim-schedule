@@ -217,7 +217,40 @@ document.addEventListener('DOMContentLoaded', () => {
   // Core Functions
   async function fetchPrayerTimes(lat, lng) {
     try {
-      const response = await fetch(`https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lng}&method=2`);
+      // Get the appropriate calculation method based on location
+      const methodResponse = await fetch(`https://api.aladhan.com/v1/methods`);
+      const methodData = await methodResponse.json();
+      
+      // First, try to get the location info to determine the appropriate method
+      const locationResponse = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}`);
+      const locationData = await locationResponse.json();
+      
+      // Define calculation method based on location
+      let method = 2; // Default ISNA method
+      
+      // Common calculation methods by region
+      if (locationData.countryCode === 'TR') method = 13; // Turkey
+      else if (locationData.countryCode === 'AE' || 
+               locationData.countryCode === 'SA' || 
+               locationData.countryCode === 'KW' || 
+               locationData.countryCode === 'QA') method = 4; // Umm Al-Qura
+      else if (locationData.countryCode === 'EG') method = 5; // Egyptian General Authority
+      else if (locationData.countryCode === 'PK' || 
+               locationData.countryCode === 'IN' || 
+               locationData.countryCode === 'BD') method = 1; // Karachi
+      else if (locationData.countryCode === 'SG' || 
+               locationData.countryCode === 'MY' || 
+               locationData.countryCode === 'ID') method = 3; // Muslim World League
+      
+      // Make the API call with additional parameters for more accuracy
+      const response = await fetch(
+        `https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lng}` +
+        `&method=${method}` +
+        `&adjustment=1` + // Consider daylight savings
+        `&tune=0,0,0,0,0,0,0,0,0` + // Fine-tune specific prayer times if needed
+        `&school=0` // 0 for Shafi (Standard), 1 for Hanafi
+      );
+      
       const data = await response.json();
       const timings = data.data.timings;
       
@@ -229,15 +262,39 @@ document.addEventListener('DOMContentLoaded', () => {
         Maghrib: timings.Maghrib,
         Isha: timings.Isha
       };
-
+  
       const prayers = Object.entries(prayerTimings).map(([name, time]) => ({
         name,
         time
       }));
-
+  
       updatePrayerBlocks(prayers);
     } catch (error) {
       console.error('Error fetching prayer times:', error);
+      // Fallback to ISNA method if there's an error
+      try {
+        const response = await fetch(`https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lng}&method=2`);
+        const data = await response.json();
+        const timings = data.data.timings;
+        
+        prayerTimings = {
+          Fajr: timings.Fajr,
+          Sunrise: timings.Sunrise,
+          Dhuhr: timings.Dhuhr,
+          Asr: timings.Asr,
+          Maghrib: timings.Maghrib,
+          Isha: timings.Isha
+        };
+  
+        const prayers = Object.entries(prayerTimings).map(([name, time]) => ({
+          name,
+          time
+        }));
+  
+        updatePrayerBlocks(prayers);
+      } catch (fallbackError) {
+        console.error('Error with fallback prayer times:', fallbackError);
+      }
     }
   }
 
