@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentView = 'daily';
   let editingBlockId = null;
   let prayerTimings = {};
-  let timeBlocks = [];
+  let timeBlocks = loadTimeBlocks();
 
   // Add countdown element to current-info div
   const currentInfo = document.querySelector('.current-info');
@@ -32,6 +32,16 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Helper Functions
+
+  function saveTimeBlocks() {
+    localStorage.setItem('timeBlocks', JSON.stringify(timeBlocks));
+  }
+  
+  function loadTimeBlocks() {
+    const saved = localStorage.getItem('timeBlocks');
+    return saved ? JSON.parse(saved) : [];
+  }
+
   function timeToMinutes(timeStr) {
     const [hours, minutes] = timeStr.split(':').map(Number);
     return hours * 60 + minutes;
@@ -109,11 +119,14 @@ document.addEventListener('DOMContentLoaded', () => {
   function createTimeBlock(block) {
     const isCurrentBlock = isCurrentTimeBlock(block.startTime, block.endTime);
     return `
-      <div class="time-block ${block.split ? 'split' : ''} ${isCurrentBlock ? 'current-block' : ''}" 
+      <div class="time-block ${block.split ? 'split' : ''} ${isCurrentBlock ? 'current-block' : ''} ${block.done ? 'done' : ''}" 
            data-id="${block.id}" 
            data-type="${block.type}">
         <div>
-          <strong>${block.title}</strong>
+          <label class="done-checkbox">
+            <input type="checkbox" ${block.done ? 'checked' : ''}>
+            <strong>${block.title}</strong>
+          </label>
           <div>${block.startTime} - ${block.endTime}</div>
         </div>
         <div class="actions">
@@ -143,7 +156,8 @@ document.addEventListener('DOMContentLoaded', () => {
           startTime: minutesToTime(currentStart),
           endTime: minutesToTime(prayer.minutes),
           prayer: findPrayerPeriod(minutesToTime(currentStart)),
-          split: true
+          split: true,
+          done: false
         });
         currentStart = prayer.minutes;
       }
@@ -194,24 +208,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     return freeTimeSlots;
-  }
-
-  function createTimeBlock(block) {
-    return `
-      <div class="time-block ${block.split ? 'split' : ''}" 
-           data-id="${block.id}" 
-           data-type="${block.type}">
-        <div>
-          <strong>${block.title}</strong>
-          <div>${block.startTime} - ${block.endTime}</div>
-        </div>
-        <div class="actions">
-          <button class="edit-btn">✎</button>
-          <button class="remove-btn">×</button>
-        </div>
-        ${block.conflict ? '<div class="conflict-indicator">Conflict!</div>' : ''}
-      </div>
-    `;
   }
 
   // Core Functions
@@ -415,6 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
       timeBlocks = timeBlocks.map(block => 
         block.id === editingBlockId ? updatedBlock : block
       );
+      saveTimeBlocks();
     } else {
       const splits = splitActivityAcrossPrayers(title, startTime, endTime);
       splits.forEach(split => {
@@ -425,6 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ...split
         });
       });
+      saveTimeBlocks(); // Add this line here
     }
 
     updateDisplay();
@@ -438,6 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function removeBlock(blockId) {
     timeBlocks = timeBlocks.filter(b => b.id !== blockId);
+    saveTimeBlocks();
     updateDisplay();
   }
 
@@ -484,6 +483,18 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   modalOverlay.addEventListener('click', closeModal);
 
+
+  document.addEventListener('change', (e) => {
+    if (e.target.matches('input[type="checkbox"]')) {
+      const blockId = parseFloat(e.target.closest('.time-block').dataset.id);
+      const block = timeBlocks.find(b => b.id === blockId);
+      if (block) {
+        block.done = e.target.checked;
+        saveTimeBlocks();
+        updateDisplay();
+      }
+    }
+  });
 
 
   document.addEventListener('click', (e) => {
