@@ -147,29 +147,6 @@ header p {
   border-radius: 0 4px 0 4px;
   font-size: 0.8rem;
 }
-
-/*Will add in Future*/
-.view-switcher {
-  margin-bottom: 20px;
-  text-align: center;
-  display: none;
-}
-
-.view-switcher button {
-  background: #fff;
-  color: #00796b;
-  border: 1px solid #00796b;
-  padding: 8px 16px;
-  margin: 0 5px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.view-switcher button.active {
-  background: #00796b;
-  color: #fff;
-}
-
 .time-block[data-type="work"] { border-left-color: #2196f3; }
 .time-block[data-type="study"] { border-left-color: #4caf50; }
 .time-block[data-type="personal"] { border-left-color: #9c27b0; }

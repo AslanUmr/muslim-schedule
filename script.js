@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const cancelBtn = document.getElementById('cancel-btn');
   const submitBtn = document.getElementById('submit-btn');
 
-  let currentView = 'daily';
   let editingBlockId = null;
   let prayerTimings = {};
   let timeBlocks = loadTimeBlocks();
@@ -20,18 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
   countdownDiv.className = 'prayer-countdown';
   currentInfo.appendChild(countdownDiv);
 
-  // Initialize view switching
-  document.querySelector('.view-switcher')?.addEventListener('click', (e) => {
-    if (e.target.matches('button')) {
-      document.querySelectorAll('.view-switcher button').forEach(btn => 
-        btn.classList.remove('active'));
-      e.target.classList.add('active');
-      currentView = e.target.dataset.view;
-      updateDisplay();
-    }
-  });
-
-  // Helper Functions
+ // Helper Functions
 
   function saveTimeBlocks() {
     localStorage.setItem('timeBlocks', JSON.stringify(timeBlocks));
