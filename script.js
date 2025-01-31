@@ -21,6 +21,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
  // Helper Functions
 
+  
+
   function saveTimeBlocks() {
     localStorage.setItem('timeBlocks', JSON.stringify(timeBlocks));
   }
@@ -198,6 +200,27 @@ document.addEventListener('DOMContentLoaded', () => {
     return freeTimeSlots;
   }
 
+  function updateCurrentBlocks() {
+    // Only update the current block status without rebuilding
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    
+    document.querySelectorAll('.time-block').forEach(block => {
+      const blockData = timeBlocks.find(b => b.id === parseFloat(block.dataset.id));
+      if (blockData) {
+        const startMinutes = timeToMinutes(blockData.startTime);
+        const endMinutes = timeToMinutes(blockData.endTime);
+        
+        if (currentMinutes >= startMinutes && currentMinutes < endMinutes) {
+          block.classList.add('current-block');
+        } else {
+          block.classList.remove('current-block');
+        }
+      }
+    });
+  }
+  
+
   // Core Functions
   async function fetchPrayerTimes(lat, lng) {
     try {
@@ -337,6 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
       time
     }));
     updatePrayerBlocks(prayers);
+    updateCurrentBlocks();
   }
 
   function showError(message) {
@@ -437,7 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(() => {
     updateClock();
     updatePrayerCountdown();
-    updateDisplay(); // This will refresh the current block highlighting
+    updateCurrentBlocks(); // This will refresh the current block highlighting
   }, 1000);
   
   updateClock();
