@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Планируйте своё время вокруг времени намазов</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="language-switcher">
+    <a href="index.html">English</a>
+    <a href="ru.html" class="active">Русский</a>
+    <a href="tr.html">Türkçe</a>
+    <a href="ar.html">العربية</a>
+  </div>
+  <header>
+    <h1>Приложение для планирования времени мусульман</h1>
+    <p>Организуйте свой день вокруг времени намаза</p>
+  </header>
+
+  <div class="current-info">
+    <div class="current-time" id="current-time">--:--:--</div>
+    <div class="prayer-countdown"></div>
+  </div>
+
+  <button id="add-block-btn">Добавить новый блок</button>
+  <section id="prayer-times">
+    <div class="prayer-header">
+      <h2>Время намаза</h2>
+      <div class="current-location" id="current-location">Загрузка местоположения...</div>
+    </div>
+    <div id="prayer-blocks"></div>
+  </section>
+
+  <div id="modal-overlay" class="modal-overlay hidden"></div>
+  <div id="add-block-modal" class="modal hidden">
+    <h3 id="modal-title">Добавить временной блок</h3>
+    <form id="add-block-form">
+      <label for="block-title">Название:</label>
+      <input type="text" id="block-title" required>
+      
+      <label for="activity-type">Тип активности:</label>
+      <select id="activity-type" required>
+        <option value="work">Работа</option>
+        <option value="study">Учеба</option>
+        <option value="personal">Личное</option>
+        <option value="other">Другое</option>
+      </select>
+
+      <label for="block-start">Время начала:</label>
+      <input type="time" id="block-start" required>
+      
+      <label for="block-end">Время окончания:</label>
+      <input type="time" id="block-end" required>
+      
+      <button type="submit" id="submit-btn">Добавить</button>
+      <button type="button" id="cancel-btn">Отмена</button>
+    </form>
+  </div>
+  <footer>
+    <p>© 2024-2025 Aslan Umarov</p>
+  </footer>
+  <script src="./script.js"></script>
+</body>
+</html>

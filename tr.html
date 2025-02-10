@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Müslüman Zaman Yönetimi Uygulaması</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="language-switcher">
+    <a href="index.html">English</a>
+    <a href="ru.html">Русский</a>
+    <a href="tr.html" class="active">Türkçe</a>
+    <a href="ar.html">العربية</a>
+  </div>
+  <header>
+    <h1>Müslüman Zaman Yönetimi Uygulaması</h1>
+    <p>Gününüzü namaz saatlerine göre planlayın</p>
+  </header>
+
+  <div class="current-info">
+    <div class="current-time" id="current-time">--:--:--</div>
+    <div class="prayer-countdown"></div>
+  </div>
+
+  <button id="add-block-btn">Yeni Blok Ekle</button>
+  <section id="prayer-times">
+    <div class="prayer-header">
+      <h2>Namaz Saatleri</h2>
+      <div class="current-location" id="current-location">Konum yükleniyor...</div>
+    </div>
+    <div id="prayer-blocks"></div>
+  </section>
+
+  <div id="modal-overlay" class="modal-overlay hidden"></div>
+  <div id="add-block-modal" class="modal hidden">
+    <h3 id="modal-title">Zaman Bloğu Ekle</h3>
+    <form id="add-block-form">
+      <label for="block-title">Başlık:</label>
+      <input type="text" id="block-title" required>
+      
+      <label for="activity-type">Aktivite Türü:</label>
+      <select id="activity-type" required>
+        <option value="work">İş</option>
+        <option value="study">Eğitim</option>
+        <option value="personal">Kişisel</option>
+        <option value="other">Diğer</option>
+      </select>
+
+      <label for="block-start">Başlangıç Zamanı:</label>
+      <input type="time" id="block-start" required>
+      
+      <label for="block-end">Bitiş Zamanı:</label>
+      <input type="time" id="block-end" required>
+      
+      <button type="submit" id="submit-btn">Ekle</button>
+      <button type="button" id="cancel-btn">İptal</button>
+    </form>
+  </div>
+  <footer>
+    <p>© 2024-2025 Aslan Umarov</p>
+  </footer>
+  <script src="./script.js"></script>
+</body>
+</html>

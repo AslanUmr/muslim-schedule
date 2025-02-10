@@ -1,4 +1,74 @@
+
+
+
 document.addEventListener('DOMContentLoaded', () => {
+
+  const translations = {
+    en: {
+      prayers: {
+        Fajr: "Fajr",
+        Sunrise: "Sunrise",
+        Dhuhr: "Dhuhr",
+        Asr: "Asr",
+        Maghrib: "Maghrib",
+        Isha: "Isha"
+      },
+      time: {
+        hours: "h",
+        minutes: "m",
+        in: "in"
+      }
+    },
+    ru: {
+      prayers: {
+        Fajr: "Фаджр",
+        Sunrise: "Восход",
+        Dhuhr: "Зухр",
+        Asr: "Аср",
+        Maghrib: "Магриб",
+        Isha: "Иша"
+      },
+      time: {
+        hours: "ч",
+        minutes: "мин",
+        in: "через"
+      }
+    },
+    tr: {
+      prayers: {
+        Fajr: "İmsak",
+        Sunrise: "Güneş",
+        Dhuhr: "Öğle",
+        Asr: "İkindi",
+        Maghrib: "Akşam",
+        Isha: "Yatsı"
+      },
+      time: {
+        hours: "s",
+        minutes: "dk",
+        in: "kalan süre"
+      }
+    },
+    ar: {
+      prayers: {
+        Fajr: "الفجر",
+        Sunrise: "الشروق",
+        Dhuhr: "الظهر",
+        Asr: "العصر",
+        Maghrib: "المغرب",
+        Isha: "العشاء"
+      },
+      time: {
+        hours: "س",
+        minutes: "د",
+        in: "في"
+      }
+    }
+  };
+  const currentLang = document.documentElement.lang || 'en';
+  const prayerTranslations = translations[currentLang]?.prayers || translations.en.prayers;
+
+
   const currentTime = document.getElementById('current-time');
   const currentLocation = document.getElementById('current-location');
   const prayerBlocks = document.getElementById('prayer-blocks');
@@ -8,6 +78,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const addBlockForm = document.getElementById('add-block-form');
   const cancelBtn = document.getElementById('cancel-btn');
   const submitBtn = document.getElementById('submit-btn');
+
+ 
 
   let editingBlockId = null;
   let prayerTimings = {};
@@ -56,20 +128,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let nextPrayer = prayerTimes.find(prayer => prayer.minutes > currentMinutes);
     
-    // If no next prayer today, use first prayer of next day
     if (!nextPrayer) {
       nextPrayer = prayerTimes[0];
     }
 
     let minutesUntil = nextPrayer.minutes - currentMinutes;
     if (minutesUntil < 0) {
-      minutesUntil += 24 * 60; // Add 24 hours
+      minutesUntil += 24 * 60;
     }
 
     const hoursUntil = Math.floor(minutesUntil / 60);
     const minsUntil = minutesUntil % 60;
 
-    countdownDiv.innerHTML = `${nextPrayer.name} in ${hoursUntil}h ${minsUntil}m`;
+    const translatedName = prayerTranslations[nextPrayer.name] || nextPrayer.name;
+    const timeTranslations = translations[currentLang]?.time || translations.en.time;
+    
+    let countdownText;
+    if (currentLang === 'ar') {
+      // Arabic format (right-to-left)
+      countdownText = `${translatedName} ${timeTranslations.in} ${hoursUntil}${timeTranslations.hours} ${minsUntil}${timeTranslations.minutes}`;
+    } else if (currentLang === 'ru') {
+      // Russian format
+      countdownText = `${translatedName} ${timeTranslations.in} ${hoursUntil}${timeTranslations.hours} ${minsUntil}${timeTranslations.minutes}`;
+    } else if (currentLang === 'tr') {
+      // Turkish format
+      countdownText = `${translatedName}'a ${hoursUntil}${timeTranslations.hours} ${minsUntil}${timeTranslations.minutes} ${timeTranslations.in}`;
+    } else {
+      // Default English format
+      countdownText = `${translatedName} ${timeTranslations.in} ${hoursUntil}${timeTranslations.hours} ${minsUntil}${timeTranslations.minutes}`;
+    }
+
+    countdownDiv.innerHTML = countdownText;
   }
 
   function isTimeOverlap(start1, end1, start2, end2) {
@@ -317,15 +406,18 @@ document.addEventListener('DOMContentLoaded', () => {
                        (currentHour > hour && (prayers[prayers.indexOf(prayer) + 1] ? 
                         currentHour < prayers[prayers.indexOf(prayer) + 1].time.split(':')[0] : true));
 
+      const translatedName = prayerTranslations[prayer.name] || prayer.name;
+
       const block = document.createElement('div');
       block.className = `prayer-block${isCurrent ? ' current' : ''}`;
       block.innerHTML = `
-        <h3>${prayer.name}</h3>
+        <h3>${translatedName}</h3>
         <div class="prayer-time">${prayer.time}</div>
         <div class="time-blocks" data-prayer="${prayer.name}"></div>
       `;
       prayerBlocks.appendChild(block);
     });
+
 
     // Add existing time blocks
     timeBlocks.forEach(block => {
