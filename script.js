@@ -338,13 +338,25 @@ document.addEventListener('DOMContentLoaded', () => {
                locationData.countryCode === 'MY' || 
                locationData.countryCode === 'ID') method = 3; // Muslim World League
       
+      // Get timezone for the location
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      
+      // Calculate adjustment for DST
+      const date = new Date();
+      const jan = new Date(date.getFullYear(), 0, 1).getTimezoneOffset();
+      const jul = new Date(date.getFullYear(), 6, 1).getTimezoneOffset();
+      const dst = Math.max(jan, jul) !== date.getTimezoneOffset();
+      
       // Make the API call with additional parameters for more accuracy
       const response = await fetch(
         `https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lng}` +
         `&method=${method}` +
-        `&adjustment=1` + // Consider daylight savings
+        `&adjustment=${dst ? 1 : 0}` + // Consider daylight savings
         `&tune=0,0,0,0,0,0,0,0,0` + // Fine-tune specific prayer times if needed
-        `&school=0` // 0 for Shafi (Standard), 1 for Hanafi
+        `&school=0` + // 0 for Shafi (Standard), 1 for Hanafi
+        `&latitudeAdjustmentMethod=3` + // Angle-based method for high latitudes
+        `&midnightMode=1` + // Standard midnight mode
+        `&timezonestring=${timezone}` // Use local timezone
       );
       
       const data = await response.json();
