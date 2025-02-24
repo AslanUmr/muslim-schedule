@@ -1,6 +1,3 @@
-
-
-
 document.addEventListener('DOMContentLoaded', () => {
 
   const translations = {
@@ -17,7 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
         hours: "h",
         minutes: "m",
         in: "in"
-      }
+      },
+      freeTime: "Free Time"
     },
     ru: {
       prayers: {
@@ -32,7 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
         hours: "ч",
         minutes: "мин",
         in: "через"
-      }
+      },
+      freeTime: "Свободное время"
     },
     tr: {
       prayers: {
@@ -47,7 +46,8 @@ document.addEventListener('DOMContentLoaded', () => {
         hours: "s",
         minutes: "dk",
         in: "kalan süre"
-      }
+      },
+      freeTime: "Boş zaman"
     },
     ar: {
       prayers: {
@@ -62,12 +62,13 @@ document.addEventListener('DOMContentLoaded', () => {
         hours: "س",
         minutes: "د",
         in: "في"
-      }
+      },
+      freeTime: "وقت فراغ"
     }
   };
   const currentLang = document.documentElement.lang || 'en';
   const prayerTranslations = translations[currentLang]?.prayers || translations.en.prayers;
-
+  const freeTimeText = translations[currentLang]?.freeTime || translations.en.freeTime;
 
   const currentTime = document.getElementById('current-time');
   const currentLocation = document.getElementById('current-location');
@@ -78,8 +79,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const addBlockForm = document.getElementById('add-block-form');
   const cancelBtn = document.getElementById('cancel-btn');
   const submitBtn = document.getElementById('submit-btn');
-
- 
 
   let editingBlockId = null;
   let prayerTimings = {};
@@ -92,8 +91,6 @@ document.addEventListener('DOMContentLoaded', () => {
   currentInfo.appendChild(countdownDiv);
 
  // Helper Functions
-
-  
 
   function saveTimeBlocks() {
     localStorage.setItem('timeBlocks', JSON.stringify(timeBlocks));
@@ -200,7 +197,9 @@ document.addEventListener('DOMContentLoaded', () => {
     return `
       <div class="time-block ${block.split ? 'split' : ''} ${isCurrentBlock ? 'current-block' : ''} ${block.done ? 'done' : ''}" 
            data-id="${block.id}" 
-           data-type="${block.type}">
+           data-type="${block.type}"
+           data-start="${block.startTime}"
+           data-end="${block.endTime}">
         <div>
           <label class="done-checkbox">
             <input type="checkbox" ${block.done ? 'checked' : ''}>
@@ -213,6 +212,21 @@ document.addEventListener('DOMContentLoaded', () => {
           <button class="remove-btn">×</button>
         </div>
         ${block.conflict ? '<div class="conflict-indicator">Conflict!</div>' : ''}
+      </div>
+    `;
+  }
+
+  function createFreeTimeBlock(slot) {
+    return `
+      <div class="free-time-block" 
+           data-start="${slot.startTime}" 
+           data-end="${slot.endTime}"
+           data-prayer="${slot.prayer}">
+        <div>
+          ${freeTimeText} (${Math.floor(slot.duration / 60)}${translations[currentLang]?.time.hours || 'h'} ${slot.duration % 60}${translations[currentLang]?.time.minutes || 'm'})
+          <div>${slot.startTime} - ${slot.endTime}</div>
+        </div>
+        <button class="add-to-free-time-btn">+</button>
       </div>
     `;
   }
@@ -263,6 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function calculateFreeTime() {
+    // Sort blocks by start time
     const sortedBlocks = [...timeBlocks].sort((a, b) => 
       timeToMinutes(a.startTime) - timeToMinutes(b.startTime)
     );
@@ -309,7 +324,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   
-
   // Core Functions
   async function fetchPrayerTimes(lat, lng) {
     try {
@@ -400,6 +414,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
 
+    // Create prayer blocks
     prayers.forEach(prayer => {
       const [hour, minute] = prayer.time.split(':').map(Number);
       const isCurrent = (currentHour === hour && currentMinute >= minute) || 
@@ -418,30 +433,44 @@ document.addEventListener('DOMContentLoaded', () => {
       prayerBlocks.appendChild(block);
     });
 
-
-    // Add existing time blocks
+    // Get all time blocks including both regular blocks and free time
+    const allTimeSlots = [];
+    
+    // Add existing task blocks
     timeBlocks.forEach(block => {
-      const container = document.querySelector(`.time-blocks[data-prayer="${block.prayer}"]`);
-      if (container) {
-        container.insertAdjacentHTML('beforeend', createTimeBlock(block));
-      }
+      allTimeSlots.push({
+        type: 'task',
+        data: block,
+        startTime: timeToMinutes(block.startTime),
+        endTime: timeToMinutes(block.endTime),
+        prayer: block.prayer
+      });
     });
-
+    
     // Add free time blocks
     const freeTimeSlots = calculateFreeTime();
     freeTimeSlots.forEach(slot => {
-      const freeBlock = document.createElement('div');
-      freeBlock.className = 'free-time-block';
-      freeBlock.innerHTML = `
-        <div>
-          Free Time (${Math.floor(slot.duration / 60)}h ${slot.duration % 60}m)
-          <div>${slot.startTime} - ${slot.endTime}</div>
-        </div>
-      `;
-
+      allTimeSlots.push({
+        type: 'free',
+        data: slot,
+        startTime: timeToMinutes(slot.startTime),
+        endTime: timeToMinutes(slot.endTime),
+        prayer: slot.prayer
+      });
+    });
+    
+    // Sort all slots by start time
+    allTimeSlots.sort((a, b) => a.startTime - b.startTime);
+    
+    // Add blocks in order to prayer containers
+    allTimeSlots.forEach(slot => {
       const container = document.querySelector(`.time-blocks[data-prayer="${slot.prayer}"]`);
       if (container) {
-        container.appendChild(freeBlock);
+        if (slot.type === 'task') {
+          container.insertAdjacentHTML('beforeend', createTimeBlock(slot.data));
+        } else {
+          container.insertAdjacentHTML('beforeend', createFreeTimeBlock(slot.data));
+        }
       }
     });
   }
@@ -474,6 +503,14 @@ document.addEventListener('DOMContentLoaded', () => {
     modalOverlay.classList.add('hidden');
     addBlockForm.reset();
     editingBlockId = null;
+  }
+
+  function openModalWithTimes(startTime, endTime) {
+    document.getElementById('block-start').value = startTime;
+    document.getElementById('block-end').value = endTime;
+    document.getElementById('modal-title').textContent = 'Add Time Block';
+    submitBtn.textContent = 'Add';
+    openModal();
   }
 
   function editBlock(blockId) {
@@ -526,7 +563,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ...split
         });
       });
-      saveTimeBlocks(); // Add this line here
+      saveTimeBlocks();
     }
 
     updateDisplay();
@@ -587,7 +624,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   modalOverlay.addEventListener('click', closeModal);
 
-
   document.addEventListener('change', (e) => {
     if (e.target.matches('input[type="checkbox"]')) {
       const blockId = parseFloat(e.target.closest('.time-block').dataset.id);
@@ -600,7 +636,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-
   document.addEventListener('click', (e) => {
     if (e.target.classList.contains('edit-btn')) {
       const blockId = parseFloat(e.target.closest('.time-block').dataset.id);
@@ -608,6 +643,15 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (e.target.classList.contains('remove-btn')) {
       const blockId = parseFloat(e.target.closest('.time-block').dataset.id);
       removeBlock(blockId);
+    } else if (e.target.classList.contains('add-to-free-time-btn') || 
+              (e.target.closest('.free-time-block') && !e.target.classList.contains('actions'))) {
+      // Get the free time block
+      const freeTimeBlock = e.target.closest('.free-time-block');
+      if (freeTimeBlock) {
+        const startTime = freeTimeBlock.dataset.start;
+        const endTime = freeTimeBlock.dataset.end;
+        openModalWithTimes(startTime, endTime);
+      }
     }
   });
 });
