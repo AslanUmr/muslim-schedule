@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Müslüman Zaman Yönetimi Uygulaması</title>
   <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#27ae60">
 </head>
 <body>
   <div class="language-switcher">
@@ -14,7 +17,7 @@
     <a href="ar.html">العربية</a>
   </div>
   <header>
-    <h1>Müslüman Zaman Yönetimi Uygulaması</h1>
+    <h1><i class="fas fa-mosque"></i> Müslüman Zaman Yönetimi Uygulaması</h1>
     <p>Gününüzü namaz saatlerine göre planlayın</p>
   </header>
 
@@ -23,7 +26,7 @@
     <div class="prayer-countdown"></div>
   </div>
 
-  <button id="add-block-btn">Yeni Blok Ekle</button>
+  <button id="add-block-btn"><i class="fas fa-plus"></i> Yeni Blok Ekle</button>
   <section id="prayer-times">
     <div class="prayer-header">
       <h2>Namaz Saatleri</h2>
@@ -34,7 +37,7 @@
 
   <div id="modal-overlay" class="modal-overlay hidden"></div>
   <div id="add-block-modal" class="modal hidden">
-    <h3 id="modal-title">Zaman Bloğu Ekle</h3>
+    <h3 id="modal-title"><i class="fas fa-calendar-plus"> </i>Zaman Bloğu Ekle</h3>
     <form id="add-block-form">
       <label for="block-title">Başlık:</label>
       <input type="text" id="block-title" required>
@@ -52,9 +55,10 @@
       
       <label for="block-end">Bitiş Zamanı:</label>
       <input type="time" id="block-end" required>
-      
-      <button type="submit" id="submit-btn">Ekle</button>
-      <button type="button" id="cancel-btn">İptal</button>
+      <div class="button-group">
+        <button type="submit" id="submit-btn">Ekle</button>
+        <button type="button" id="cancel-btn">İptal</button>
+      </div>
     </form>
   </div>
   <footer>

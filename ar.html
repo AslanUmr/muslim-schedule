@@ -6,6 +6,9 @@
   <title>تطبيق إدارة الوقت للمسلمين</title>
   <link rel="stylesheet" href="./style.css">
   <link rel="stylesheet" href="./style-rtl.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#27ae60">
 </head>
 <body>
   <div class="language-switcher">
@@ -15,7 +18,7 @@
     <a href="ar.html" class="active">العربية</a>
   </div>
   <header>
-    <h1>تطبيق إدارة الوقت للمسلمين</h1>
+    <h1><i class="fas fa-mosque"></i> تطبيق إدارة الوقت للمسلمين</h1>
     <p>نظم يومك حول أوقات الصلاة</p>
   </header>
 
@@ -24,7 +27,7 @@
     <div class="prayer-countdown"></div>
   </div>
 
-  <button id="add-block-btn">إضافة فترة جديدة</button>
+  <button id="add-block-btn">إضافة فترة جديدة <i class="fas fa-plus"></i></button>
   <section id="prayer-times">
     <div class="prayer-header">
       <h2>أوقات الصلاة</h2>
@@ -35,7 +38,7 @@
 
   <div id="modal-overlay" class="modal-overlay hidden"></div>
   <div id="add-block-modal" class="modal hidden">
-    <h3 id="modal-title">إضافة فترة زمنية</h3>
+    <h3 id="modal-title">إضافة فترة زمنية <i class="fas fa-calendar-plus"></i></h3>
     <form id="add-block-form">
       <label for="block-title">العنوان:</label>
       <input type="text" id="block-title" required>
@@ -54,8 +57,10 @@
       <label for="block-end">وقت الانتهاء:</label>
       <input type="time" id="block-end" required>
       
-      <button type="submit" id="submit-btn">إضافة</button>
-      <button type="button" id="cancel-btn">إلغاء</button>
+      <div class="button-group">
+        <button type="submit" id="submit-btn">إضافة</button>
+        <button type="button" id="cancel-btn">إلغاء</button>
+      </div>
     </form>
   </div>
   <footer>

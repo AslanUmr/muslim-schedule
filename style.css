@@ -5,79 +5,165 @@
 }
 
 :root {
-  --primary: #2e7d32;
-  --primary-light: #4caf50;
-  --primary-dark: #1b5e20;
-  --secondary: #81c784;
-  --accent: #c8e6c9;
-  --text-primary: #212121;
-  --text-secondary: #757575;
-  --background: #f1f8e9;
+  --primary: #4ade80;
+  --primary-light: #86efac;
+  --primary-dark: #22c55e;
+  --secondary: #34d399;
+  --accent: #ecfdf5;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --background: #f8fafc;
   --surface: #ffffff;
-  --error: #d32f2f;
+  --error: #ef4444;
+  --shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.05), 0 4px 6px rgba(0, 0, 0, 0.03);
+  --radius: 16px;
+  --radius-sm: 8px;
+  --transition: all 0.2s ease;
+  --border-color: #e2e8f0;
 }
 
 body {
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
   line-height: 1.6;
   color: var(--text-primary);
   background-color: var(--background);
-  padding: 20px;
-  max-width: 1024px;
-  margin: auto;
+  padding: 16px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
+/* Header Styles */
 header {
   text-align: center;
-  margin-bottom: 30px;
-  padding: 20px;
+  margin-bottom: 24px;
+  padding: 24px;
   background: var(--surface);
-  border-radius: 16px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  background-image: linear-gradient(135deg, var(--accent), #ffffff);
 }
 
 header h1 {
-  font-size: 2.5rem;
-  color: var(--primary);
+  font-size: 2.2rem;
+  color: var(--primary-dark);
   margin-bottom: 8px;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: -0.5px;
 }
 
 header p {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   color: var(--text-secondary);
+  font-weight: 500;
 }
 
+/* Language Switcher */
+.language-switcher {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin: 16px 0;
+}
+
+.language-switcher a {
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 30px;
+  transition: var(--transition);
+  font-size: 0.9rem;
+}
+
+.language-switcher a:hover {
+  background-color: #f1f5f9;
+  color: #1e293b;
+}
+
+.language-switcher a.active {
+  background-color: var(--primary);
+  color: white;
+}
+
+/* Current Info Section */
 .current-info {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 20px;
   background: var(--surface);
-  padding: 24px;
-  border-radius: 16px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 28px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
   margin-bottom: 30px;
   text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.current-info::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-light), var(--primary-dark));
 }
 
 .current-time {
-  font-size: 2.5rem;
+  font-size: 2.8rem;
   font-weight: 700;
-  color: var(--primary);
+  color: var(--primary-dark);
   font-variant-numeric: tabular-nums;
+  letter-spacing: -1px;
+  line-height: 1.1;
 }
 
 .prayer-countdown {
-  font-size: 1.4rem;
+  font-size: 1.3rem;
   color: var(--primary-dark);
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--accent);
+  padding: 12px;
+  border-radius: var(--radius-sm);
 }
 
+/* Add Block Button */
+#add-block-btn {
+  background: var(--primary);
+  color: white;
+  padding: 14px 28px;
+  border-radius: 30px;
+  font-size: 1rem;
+  margin: 24px auto;
+  display: block;
+  transition: var(--transition);
+  border: none;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+
+#add-block-btn:hover {
+  background: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+#add-block-btn:active {
+  transform: translateY(1px);
+}
+
+/* Prayer Times Section */
 #prayer-times {
   background: var(--surface);
-  padding: 24px;
-  border-radius: 16px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 28px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
   margin-bottom: 30px;
 }
 
@@ -85,66 +171,107 @@ header p {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
   padding-bottom: 16px;
   border-bottom: 2px solid var(--accent);
 }
 
 .prayer-header h2 {
-  font-size: 1.8rem;
-  color: var(--primary);
+  font-size: 1.7rem;
+  color: var(--text-primary);
   margin: 0;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.prayer-header h2 i {
+  color: var(--primary);
 }
 
 .current-location {
-  font-size: 1.2rem;
+  font-size: 0.95rem;
   color: var(--text-secondary);
   background: var(--accent);
-  padding: 8px 16px;
-  border-radius: 20px;
+  padding: 10px 18px;
+  border-radius: 30px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
 }
 
+.current-location::before {
+  content: "📍";
+  font-size: 0.9rem;
+}
+
+/* Prayer Blocks */
 .prayer-block {
   background: var(--background);
   padding: 20px;
-  margin: 16px 0;
-  border-radius: 12px;
-  border: 1px solid var(--accent);
-  transition: all 0.3s ease;
+  margin: 20px 0;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-color);
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
 }
 
 .prayer-block.current {
   border: 2px solid var(--primary);
-  background: var(--accent);
-  transform: scale(1.02);
+  background: linear-gradient(to right, rgba(46, 204, 113, 0.05), rgba(46, 204, 113, 0.01));
+  transform: scale(1.01);
+}
+
+.prayer-block.current::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background: var(--primary);
 }
 
 .prayer-block h3 {
-  color: var(--primary);
-  margin-bottom: 12px;
-  font-size: 1.4rem;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+  font-size: 1.3rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
 }
 
 .prayer-time {
   font-size: 1.2rem;
-  color: var(--text-secondary);
-  margin-bottom: 16px;
+  color: var(--primary-dark);
+  margin-bottom: 18px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
 }
 
+/* Time Blocks */
 .time-block {
   background: var(--surface);
-  padding: 16px;
-  margin: 8px 0;
-  border-radius: 12px;
+  padding: 18px;
+  margin: 14px 0;
+  border-radius: var(--radius-sm);
   border-left: 4px solid var(--primary);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: all 0.3s ease;
+  transition: var(--transition);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  position: relative;
 }
 
 .time-block:hover {
-  transform: translateX(4.4px);
+  transform: translateX(4px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.04);
 }
 
 .time-block.split {
@@ -152,117 +279,81 @@ header p {
 }
 
 .time-block.current-block {
-  background: var(--accent);
-  border: 2px solid var(--primary);
+  background: linear-gradient(to right, rgba(46, 204, 113, 0.08), rgba(46, 204, 113, 0.01));
+  border: 1px solid var(--primary);
   border-left-width: 4px;
-  transform: scale(1.02);
+  transform: scale(1.01);
+  box-shadow: 0 3px 8px rgba(46, 204, 113, 0.1);
 }
 
-.time-block[data-type="work"] { border-left-color: #2196f3; }
-.time-block[data-type="study"] { border-left-color: var(--primary-light); }
-.time-block[data-type="personal"] { border-left-color: #9c27b0; }
-.time-block[data-type="other"] { border-left-color: #ff9800; }
+.time-block[data-type="work"] { border-left-color: #3b82f6; }
+.time-block[data-type="study"] { border-left-color: #8b5cf6; }
+.time-block[data-type="personal"] { border-left-color: #f97316; }
+.time-block[data-type="other"] { border-left-color: #64748b; }
 
 .time-block .actions {
   display: flex;
-  gap: 8px;
+  gap: 10px;
 }
 
 .time-block button {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
+  transition: var(--transition);
+  border: none;
+  cursor: pointer;
+  background: #f7fafc;
+  color: var(--text-primary);
+  font-size: 1.1rem;
 }
 
 .time-block .edit-btn {
-  background: var(--primary-light);
+  background: #dbeafe;
+  color: #2563eb;
 }
 
 .time-block .remove-btn {
-  background: var(--error);
+  background: #fee2e2;
+  color: #dc2626;
 }
 
 .time-block button:hover {
   transform: scale(1.1);
 }
 
+.time-block button:active {
+  transform: scale(0.95);
+}
+
+/* Free Time Block */
 .free-time-block {
-  background: #c1c1c1a0;
+  background: rgba(148, 163, 184, 0.08);
   padding: 16px;
-  margin: 8px 0;
-  border-radius: 12px;
-  border-left: 4px solid var(--text-secondary);
+  margin: 14px 0;
+  border-radius: var(--radius-sm);
+  border-left: 4px solid #94a3b8;
   color: var(--text-secondary);
   font-style: italic;
+  position: relative;
+  overflow: hidden;
 }
 
-#add-block-btn {
-  background: var(--primary);
-  color: white;
-  padding: 12px 24px;
-  border-radius: 25px;
-  font-size: 1.1rem;
-  margin: 20px auto;
-  display: block;
-  transition: all 0.3s ease;
+.free-time-block::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(to left, rgba(148, 163, 184, 0.08), transparent);
+  pointer-events: none;
 }
 
-#add-block-btn:hover {
-  background: var(--primary-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-.modal {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #fff;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-  z-index: 1000;
-  background: var(--surface);
-  padding: 24px;
-  border-radius: 16px;
-  width: 90%;
-  max-width: 500px;
-}
-
-.modal h3 {
-  color: var(--primary);
-  margin-bottom: 20px;
-  font-size: 1.5rem;
-}
-
-.modal input,
-.modal select {
-  width: 100%;
-  padding: 12px;
-  margin: 8px 0 20px;
-  border: 1px solid var(--accent);
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.3s ease;
-}
-
-.modal input:focus,
-.modal select:focus {
-  border-color: var(--primary);
-  outline: none;
-}
-
-.modal button[type="submit"] {
-  background: var(--primary);
-  margin-right: 10px;
-}
-
-.modal button[type="button"] {
-  background: var(--text-secondary);
-}
-
+/* Checkbox Styles */
 .done-checkbox {
   display: flex;
   align-items: center;
@@ -273,13 +364,168 @@ header p {
   width: 20px;
   height: 20px;
   border: 2px solid var(--primary);
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  position: relative;
+  transition: var(--transition);
+  background-color: white;
+}
+
+.done-checkbox input[type="checkbox"]:checked {
+  background-color: var(--primary);
+}
+
+.done-checkbox input[type="checkbox"]:checked::after {
+  content: "✓";
+  position: absolute;
+  color: white;
+  font-size: 14px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .time-block.done {
-  opacity: 0.6;
-  background: #a1c9a2;
+  opacity: 0.7;
+  background: rgba(46, 204, 113, 0.08);
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 999;
+  backdrop-filter: blur(5px);
+  transition: var(--transition);
+}
+
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  padding: 28px;
+  border-radius: var(--radius);
+  width: 90%;
+  max-width: 500px;
+  transition: var(--transition);
+}
+
+.modal h3 {
+  color: var(--text-primary);
+  margin-bottom: 24px;
+  font-size: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 16px;
+}
+
+.modal h3 i {
+  color: var(--primary);
+}
+
+.modal label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.modal input,
+.modal select {
+  width: 100%;
+  padding: 14px;
+  margin: 0 0 20px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+  color: var(--text-primary);
+  background-color: var(--surface);
+}
+
+.modal input:focus,
+.modal select:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.2);
+}
+
+.modal .button-group {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.modal button {
+  padding: 14px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: var(--transition);
+  border: none;
+  flex: 1;
+  font-weight: 600;
+}
+
+.modal button[type="submit"] {
+  background: var(--primary);
+  color: white;
+}
+
+.modal button[type="button"] {
+  background: #f1f5f9;
+  color: var(--text-primary);
+}
+
+.modal button:hover {
+  transform: translateY(-2px);
+}
+
+.modal button:active {
+  transform: translateY(1px);
+}
+
+.conflict-indicator {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: var(--error);
+  color: white;
+  padding: 6px 10px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+}
+
+.error-message {
+  color: var(--error);
+  margin-top: 5px;
+  font-size: 0.9rem;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-5px); }
+  40%, 80% { transform: translateX(5px); }
+}
+
+.hidden {
+  display: none;
 }
 
 footer {
@@ -287,67 +533,164 @@ footer {
   padding: 20px;
   color: var(--text-secondary);
   font-size: 0.9rem;
+  margin-top: 30px;
 }
 
-
-.conflict-indicator {
-  position: absolute;
-  top: 0;
-  right: 0;
-  background: #ff5252;
-  color: white;
-  padding: 2px 6px;
-  border-radius: 0 4px 0 4px;
-  font-size: 0.8rem;
+/* Media Queries for Responsive Design */
+@media (max-width: 768px) {
+  body {
+    padding: 12px;
+  }
+  
+  header {
+    padding: 20px;
+  }
+  
+  header h1 {
+    font-size: 1.8rem;
+  }
+  
+  .current-info {
+    grid-template-columns: 1fr;
+    padding: 20px;
+  }
+  
+  .prayer-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  
+  .current-location {
+    align-self: flex-start;
+  }
+  
+  .prayer-block {
+    padding: 16px;
+  }
+  
+  .time-block {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .time-block .actions {
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 10px;
+  }
+  
+  .modal {
+    width: 95%;
+    padding: 24px;
+  }
 }
 
-
-
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 999;
+@media (max-width: 480px) {
+  header h1 {
+    font-size: 1.6rem;
+  }
+  
+  header p {
+    font-size: 1rem;
+  }
+  
+  .language-switcher {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .current-time {
+    font-size: 2.2rem;
+  }
+  
+  .prayer-countdown {
+    font-size: 1.1rem;
+  }
+  
+  #prayer-times {
+    padding: 18px;
+  }
+  
+  .prayer-header h2 {
+    font-size: 1.4rem;
+  }
+  
+  .prayer-block h3 {
+    font-size: 1.2rem;
+  }
+  
+  .time-block {
+    padding: 14px;
+  }
 }
 
-.hidden {
-  display: none;
-}
+/* Dark mode support for users with system preference */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0f172a;
+    --surface: #1e293b;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --accent: #0f766e;
+    --border-color: #334155;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
+  }
+  
+  header {
+    background-image: linear-gradient(135deg, #134e4a, #1e293b);
+  }
+  
+  .prayer-block {
+    border-color: #334155;
+  }
+  
+  .prayer-block.current {
+    background: rgba(46, 204, 113, 0.1);
+  }
+  
+  .time-block {
+    background: #1e293b;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+  
+  .time-block.current-block {
+    background: rgba(46, 204, 113, 0.1);
+  }
+  
+  .free-time-block {
+    background: rgba(51, 65, 85, 0.5);
+  }
+  
+  .time-block .edit-btn {
+    background: #1e40af;
+    color: #bfdbfe;
+  }
+  
+  .time-block .remove-btn {
+    background: #7f1d1d;
+    color: #fecaca;
+  }
+  
+  .modal {
+    background: #1e293b;
+  }
+  
+  .modal button[type="button"] {
+    background: #334155;
+    color: #e2e8f0;
+  }
 
-.error-message {
-  color: #ff1744;
-  margin-top: 5px;
-  font-size: 0.9rem;
-}
-
-button {
-  background: #00796b;
-  color: #fff;
-  padding: 10px 15px;
-  border: none;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.2s ease;
-}
-button:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-.language-switcher{
-  display: flex;
-  gap: 10px;
-  justify-content: end;
-  margin: 10px;
-}
-.language-switcher a {
-  text-decoration: none;
-  color: #308436;
-  transition: color 0.2s ease;
-}
-.language-switcher a:hover {
-  color:#1b490c
+  .modal input,
+  .modal select {
+    background-color: #334155;
+    border-color: #475569;
+    color: #f1f5f9;
+  }
+  
+  .done-checkbox input[type="checkbox"] {
+    background-color: #334155;
+    border-color: #4ade80;
+  }
 }

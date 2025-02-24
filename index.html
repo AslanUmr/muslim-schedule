@@ -2,10 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Muslim Time Management App</title>
   <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#27ae60">
 </head>
 <body>
   <div class="language-switcher">
@@ -14,8 +16,9 @@
     <a href="tr.html">Türkçe</a>
     <a href="ar.html">العربية</a>
   </div>
+  
   <header>
-    <h1>Muslim Time Management App</h1>
+    <h1><i class="fas fa-mosque"></i> Muslim Time Management</h1>
     <p>Organize your day around prayer times</p>
   </header>
 
@@ -24,11 +27,13 @@
     <div class="prayer-countdown"></div>
   </div>
 
-  </div>
-  <button id="add-block-btn">Add New Block</button>
+  <button id="add-block-btn">
+    <i class="fas fa-plus"></i> Add New Block
+  </button>
+  
   <section id="prayer-times">
     <div class="prayer-header">
-      <h2>Prayer Times</h2>
+      <h2><i class="fas fa-clock"></i> Prayer Times</h2>
       <div class="current-location" id="current-location">Loading location...</div>
     </div>
     <div id="prayer-blocks"></div>
@@ -36,10 +41,10 @@
 
   <div id="modal-overlay" class="modal-overlay hidden"></div>
   <div id="add-block-modal" class="modal hidden">
-    <h3 id="modal-title">Add Time Block</h3>
+    <h3 id="modal-title"><i class="fas fa-calendar-plus"></i> Add Time Block</h3>
     <form id="add-block-form">
       <label for="block-title">Title:</label>
-      <input type="text" id="block-title" required>
+      <input type="text" id="block-title" required placeholder="Enter activity title">
       
       <label for="activity-type">Activity Type:</label>
       <select id="activity-type" required>
@@ -55,13 +60,17 @@
       <label for="block-end">End Time:</label>
       <input type="time" id="block-end" required>
       
-      <button type="submit" id="submit-btn">Add</button>
-      <button type="button" id="cancel-btn" style="background: #999;">Cancel</button>
+      <div class="button-group">
+        <button type="submit" id="submit-btn">Add</button>
+        <button type="button" id="cancel-btn">Cancel</button>
+      </div>
     </form>
   </div>
+  
   <footer>
-    <p>© 2024-2025 Aslan Umarov. All rights reserved.
-    </p>
+    <p>© 2024-2025 Aslan Umarov. All rights reserved.</p>
   </footer>
+  
   <script src="./script.js"></script>
-</body></html>
+</body>
+</html>
