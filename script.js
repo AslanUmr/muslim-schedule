@@ -515,6 +515,7 @@ document.addEventListener('DOMContentLoaded', () => {
       
       // Define calculation method based on location
       let method = 2; // Default ISNA method
+      let adjustments = "0,0,0,0,0,0,0,0,0"; // Default no adjustments
       
       // Common calculation methods by region
       if (locationData.countryCode === 'TR') method = 13; // Turkey
@@ -522,13 +523,20 @@ document.addEventListener('DOMContentLoaded', () => {
       else if (locationData.countryCode === 'EG') method = 5; // Egyptian General Authority
       else if (['PK', 'IN', 'BD'].includes(locationData.countryCode)) method = 1; // Karachi
       else if (['SG', 'MY', 'ID'].includes(locationData.countryCode)) method = 3; // Muslim World League
+      else if (locationData.countryCode === 'KZ') {
+        // Kazakhstan - using Muslim World League method (3) with specific adjustments
+        method = 3;
+        // Apply Kazakhstan-specific adjustments (in minutes)
+        // Format: Fajr,Sunrise,Dhuhr,Asr,Sunset,Maghrib,Isha
+        adjustments = "20,-5,5,5,0,5,-13"; // Example: +5 min for Fajr, +15 for Maghrib and Isha
+      }
       
       // Make the API call with additional parameters for more accuracy
       const response = await fetch(
         `https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lng}` +
         `&method=${method}` +
         `&adjustment=1` + // Consider daylight savings
-        `&tune=0,0,0,0,0,0,0,0,0` + // Fine-tune specific prayer times if needed
+        `&tune=${adjustments}` + // Fine-tune specific prayer times
         `&school=0` // 0 for Shafi (Standard), 1 for Hanafi
       );
       
