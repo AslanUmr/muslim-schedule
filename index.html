@@ -1,0 +1,1685 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Muslim Time Manager</title>
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- BUNDLED ADHAN.JS LIBRARY (OFFLINE BACKUP ENGINE) - FIXED & EXPANDED -->
+    <script>
+        (function (global) {
+            "use strict";
+
+            var Coordinates = function (latitude, longitude) {
+                this.latitude = latitude;
+                this.longitude = longitude;
+            };
+
+            var Madhab = {
+                Shafi: 1,
+                Hanafi: 2
+            };
+
+            var HighLatitudeRule = {
+                MiddleOfTheNight: 1,
+                SeventhOfTheNight: 2,
+                TwilightAngle: 3
+            };
+
+            var CalculationMethod = {
+                MuslimWorldLeague: function () { return { fajrAngle: 18, ishaAngle: 17, method: "MuslimWorldLeague" }; },
+                Egyptian: function () { return { fajrAngle: 19.5, ishaAngle: 17.5, method: "Egyptian" }; },
+                Karachi: function () { return { fajrAngle: 18, ishaAngle: 18, method: "Karachi" }; },
+                UmmAlQura: function () { return { fajrAngle: 18.5, method: "UmmAlQura" }; },
+                Dubai: function () { return { fajrAngle: 18.2, ishaAngle: 18.2, method: "Dubai" }; },
+                MoonsightingCommittee: function () { return { fajrAngle: 18, ishaAngle: 18, method: "MoonsightingCommittee" }; },
+                NorthAmerica: function () { return { fajrAngle: 15, ishaAngle: 15, method: "NorthAmerica" }; },
+                Kuwait: function () { return { fajrAngle: 18, ishaAngle: 17.5, method: "Kuwait" }; },
+                Qatar: function () { return { fajrAngle: 18, ishaAngle: 90 / 60, method: "Qatar" }; },
+                Singapore: function () { return { fajrAngle: 20, ishaAngle: 18, method: "Singapore" }; },
+                Turkey: function () { return { fajrAngle: 18, ishaAngle: 17, method: "Turkey" }; },
+                Tehran: function () { return { fajrAngle: 17.7, maghribAngle: 4.5, ishaAngle: 14, method: "Tehran" }; },
+                Other: function () { return { fajrAngle: 0, ishaAngle: 0, method: "Other" }; }
+            };
+
+            var SolarTime = function (date, coordinates) {
+                this.date = date;
+                this.coordinates = coordinates;
+
+                var julianDate = this.julian(date.getFullYear(), date.getMonth() + 1, date.getDate()) - (coordinates.longitude / (15 * 24));
+                this.declination = this.computeDeclination(julianDate);
+                this.equationOfTime = this.computeEquationOfTime(julianDate);
+            };
+
+            SolarTime.prototype = {
+                julian: function (year, month, day) {
+                    if (month <= 2) { year -= 1; month += 12; }
+                    var A = Math.floor(year / 100);
+                    var B = 2 - A + Math.floor(A / 4);
+                    return Math.floor(365.25 * (year + 4716)) + Math.floor(30.6001 * (month + 1)) + day + B - 1524.5;
+                },
+                computeDeclination: function (julianDate) {
+                    var D = julianDate - 2451545.0;
+                    var g = 357.529 + 0.98560028 * D;
+                    var q = 280.459 + 0.98564736 * D;
+                    var L = q + 1.915 * Math.sin(this.radians(g)) + 0.02 * Math.sin(this.radians(2 * g));
+                    var e = 23.439 - 0.00000036 * D;
+                    var u = Math.atan2(Math.cos(this.radians(e)) * Math.sin(this.radians(L)), Math.cos(this.radians(L)));
+                    return this.degrees(u);
+                },
+                computeEquationOfTime: function (julianDate) {
+                    var D = julianDate - 2451545.0;
+                    var g = 357.529 + 0.98560028 * D;
+                    var q = 280.459 + 0.98564736 * D;
+                    var L = q + 1.915 * Math.sin(this.radians(g)) + 0.02 * Math.sin(this.radians(2 * g));
+                    var e = 23.439 - 0.00000036 * D;
+                    var RA = Math.atan2(Math.cos(this.radians(e)) * Math.sin(this.radians(L)), Math.cos(this.radians(L)));
+                    RA = this.degrees(RA) / 15;
+                    var q_over_15 = q / 15;
+                    return q_over_15 - RA;
+                },
+                hourAngle: function (angle, afterNoon) {
+                    var term1 = Math.sin(this.radians(angle)) - Math.sin(this.radians(this.declination)) * Math.sin(this.radians(this.coordinates.latitude));
+                    var term2 = Math.cos(this.radians(this.declination)) * Math.cos(this.radians(this.coordinates.latitude));
+                    var result = Math.acos(term1 / term2);
+                    result = this.degrees(result);
+                    return afterNoon ? result : -result;
+                },
+                radians: function (deg) { return deg * (Math.PI / 180); },
+                degrees: function (rad) { return rad * (180 / Math.PI); }
+            };
+
+            var PrayerTimes = function (coordinates, date, calculationParameters) {
+                this.coordinates = coordinates;
+                this.date = date;
+                this.calculationParameters = calculationParameters;
+                this.solarTime = new SolarTime(date, coordinates);
+
+                var timeZone = date.getTimezoneOffset() / -60;
+                // Fixed: Use solarTime.equationOfTime directly
+                var localNoon = 12 + timeZone - (coordinates.longitude / 15) - (this.solarTime.equationOfTime / 60);
+
+                var fajrAngle = calculationParameters.fajrAngle || 18;
+                var ishaAngle = calculationParameters.ishaAngle || 18;
+                var maghribAngle = calculationParameters.maghribAngle;
+
+                var fajrTime = this.solarTime.hourAngle(-fajrAngle, false);
+                var sunriseTime = this.solarTime.hourAngle(-0.8333, false);
+                var asrAngle = calculationParameters.madhab === Madhab.Hanafi ? 2 : 1;
+                var asrTime = this.solarTime.hourAngle(this.arccot(asrAngle + Math.tan(this.solarTime.radians(Math.abs(this.solarTime.coordinates.latitude - this.solarTime.declination)))), true);
+
+                // Maghrib
+                var maghribTime;
+                if (maghribAngle) {
+                    maghribTime = this.solarTime.hourAngle(-maghribAngle, true);
+                } else {
+                    maghribTime = this.solarTime.hourAngle(-0.8333, true); // Sunset
+                }
+
+                // Isha
+                var ishaTime = this.solarTime.hourAngle(-ishaAngle, true);
+
+                // Conversions
+                var safeDate = function (timeHours) {
+                    if (isNaN(timeHours)) return null;
+                    var time = localNoon + (timeHours / 15);
+                    var hours = Math.floor(time);
+                    var minutes = Math.floor((time - hours) * 60);
+                    var seconds = Math.floor((time - (hours + minutes / 60)) * 60 * 60);
+                    return new Date(date.getFullYear(), date.getMonth(), date.getDate(), hours, minutes, seconds);
+                };
+
+                this.fajr = safeDate(fajrTime);
+                this.sunrise = safeDate(sunriseTime);
+                this.dhuhr = new Date(date.getFullYear(), date.getMonth(), date.getDate(), Math.floor(localNoon), Math.floor((localNoon - Math.floor(localNoon)) * 60));
+                this.asr = safeDate(asrTime);
+                this.maghrib = safeDate(maghribTime);
+                this.isha = safeDate(ishaTime);
+
+                // Adjustments/Offsets can be added here if needed, skipping for brevity in this fix
+            };
+
+            PrayerTimes.prototype = {
+                arccot: function (x) { return this.solarTime.degrees(Math.atan(1 / x)); }
+            };
+
+            global.adhan = {
+                Coordinates: Coordinates,
+                Madhab: Madhab,
+                HighLatitudeRule: HighLatitudeRule,
+                CalculationMethod: CalculationMethod,
+                PrayerTimes: PrayerTimes,
+                SolarTime: SolarTime
+            };
+        })(this);
+    </script>
+
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-dark: #059669;
+            --bg-dark: #111827;
+            --card-bg: rgba(31, 41, 55, 0.7);
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --danger: #ef4444;
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --success: #22c55e;
+            --warning: #f59e0b;
+
+            /* Type Colors */
+            --color-work: #3b82f6;
+            --color-study: #8b5cf6;
+            --color-personal: #10b981;
+            --color-worship: #f59e0b;
+            --color-training: #ef4444;
+            --color-hobby: #ec4899;
+            --color-relaxing: #06b6d4;
+            --color-other: #6b7280;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            margin: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Background Orbs */
+        .bg-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+            opacity: 0.4;
+        }
+
+        .orb-1 {
+            width: 300px;
+            height: 300px;
+            background: var(--primary);
+            top: -100px;
+            left: -100px;
+        }
+
+        .orb-2 {
+            width: 250px;
+            height: 250px;
+            background: #3b82f6;
+            bottom: -50px;
+            right: -50px;
+        }
+
+        .app-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        /* Header */
+        header {
+            margin-bottom: 24px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h1 i {
+            color: var(--primary);
+        }
+
+        header p {
+            color: var(--text-muted);
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        /* Buttons */
+        .icon-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: grid;
+            place-items: center;
+            transition: 0.2s;
+        }
+
+        /* IMPROVED OPTIONS BUTTON */
+        .options-btn {
+            background: rgba(31, 41, 55, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .options-btn:hover {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: var(--primary);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 12px rgba(16, 185, 129, 0.2);
+        }
+
+        .options-btn i {
+            font-size: 1.1rem;
+        }
+
+        .primary-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            width: 100%;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+            transition: 0.2s;
+        }
+
+        .primary-btn:active {
+            transform: scale(0.98);
+        }
+
+        .delete {
+            background: rgba(239, 68, 68, 0.1);
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            width: 36px;
+            height: 36px;
+            display: grid;
+            place-items: center;
+            transition: 0.2s;
+            position: relative;
+            z-index: 2;
+        }
+
+        .delete:active {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        /* Secondary Buttons (for modals) */
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            border: 1px solid var(--glass-border);
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .btn-confirm {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* CURRENT STATUS CARD (New) */
+        .status-card {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .current-task-indicator {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-left: 4px solid var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .current-task-indicator.free {
+            border-left-color: var(--text-muted);
+        }
+
+        .indicator-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            display: grid;
+            place-items: center;
+            font-size: 1.2rem;
+        }
+
+        .indicator-content h4 {
+            margin: 0 0 4px 0;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .indicator-content .task-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .prayer-next-badge {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            padding: 10px 15px;
+            border-radius: 12px;
+            margin-top: 5px;
+        }
+
+        .prayer-next-label {
+            color: var(--primary);
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .prayer-next-timer {
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        /* Current Info (Modified) */
+        .current-info-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 15px;
+        }
+
+        .time-display {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            line-height: 1;
+        }
+
+        .location-badge {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 4px;
+        }
+
+        .status-online {
+            background-color: var(--success);
+            box-shadow: 0 0 8px var(--success);
+        }
+
+        .status-offline {
+            background-color: var(--warning);
+            box-shadow: 0 0 8px var(--warning);
+        }
+
+        /* CALENDAR STRIP */
+        .calendar-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 16px;
+            padding: 5px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .cal-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 10px;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .date-strip {
+            display: flex;
+            overflow-x: auto;
+            gap: 8px;
+            padding: 5px;
+            scrollbar-width: none;
+            /* Firefox */
+        }
+
+        .date-strip::-webkit-scrollbar {
+            display: none;
+        }
+
+        .date-item {
+            min-width: 50px;
+            text-align: center;
+            padding: 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: 0.2s;
+        }
+
+        .date-item.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .date-item .day-name {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            display: block;
+        }
+
+        .date-item .day-num {
+            font-size: 1.1rem;
+            font-weight: 700;
+            display: block;
+        }
+
+        /* Timeline */
+        .section-header {
+            margin-bottom: 15px;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .prayer-section {
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .prayer-marker {
+            position: absolute;
+            left: -19px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            border: 2px solid var(--bg-dark);
+            z-index: 2;
+        }
+
+        .prayer-section.current .prayer-marker {
+            background: var(--primary);
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        .prayer-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .prayer-title span:first-child {
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .prayer-time-badge {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-family: monospace;
+        }
+
+        /* Tasks */
+        .task-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: transform 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Dynamic border left based on type */
+        .task-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--task-color, var(--glass-border));
+        }
+
+        .task-card:active {
+            transform: scale(0.98);
+        }
+
+        .task-card.completed {
+            opacity: 0.5;
+        }
+
+        .task-card.completed h4 {
+            text-decoration: line-through;
+        }
+
+        .checkbox-wrapper {
+            min-width: 24px;
+            margin-left: 6px;
+            cursor: pointer;
+        }
+
+        .custom-checkbox {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--text-muted);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            /* Let clicks pass to wrapper */
+        }
+
+        .completed .custom-checkbox {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .task-info {
+            flex: 1;
+        }
+
+        .task-info h4 {
+            margin: 0 0 4px 0;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .task-info span {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: block;
+        }
+
+        .free-time {
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+
+        .free-time:hover {
+            background: rgba(255, 255, 255, 0.02);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 100;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 400px;
+            background: #1f2937;
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 24px;
+            z-index: 101;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        /* Form Elements */
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        input,
+        select {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            font-size: 1rem;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Type Selector */
+        .type-selector {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 16px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .type-option {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+            color: var(--text-muted);
+        }
+
+        .type-option.selected {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--type-color);
+            color: white;
+        }
+
+        .color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--type-color);
+            box-shadow: 0 0 5px var(--type-color);
+            flex-shrink: 0;
+        }
+
+        .time-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .lang-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .lang-btn {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            color: var(--text-muted);
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .lang-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        #search-results {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            background: #2d3748;
+            border-radius: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+            position: absolute;
+            width: 100%;
+            z-index: 10;
+            border: 1px solid var(--glass-border);
+        }
+
+        #search-results li {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+        }
+
+        #search-results li:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .location-search-box {
+            position: relative;
+            display: flex;
+            gap: 8px;
+        }
+
+        #search-btn {
+            background: var(--primary);
+            border: none;
+            color: white;
+            border-radius: 10px;
+            width: 44px;
+            cursor: pointer;
+        }
+
+        .presets {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        .preset-chip {
+            white-space: nowrap;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+
+    <div class="app-container">
+        <header>
+            <div class="header-top">
+                <h1><i class="fas fa-mosque"></i> <span data-i18n="appTitle">Muslim Focus</span></h1>
+                <button id="settings-btn" class="options-btn" aria-label="Settings">
+                    <i class="fas fa-cog"></i> <span data-i18n="settingsTitle">Settings</span>
+                </button>
+            </div>
+            <p data-i18n="appSubtitle">Structure your life around prayer</p>
+        </header>
+
+        <!-- NEW STATUS CARD -->
+        <div class="card status-card">
+            <div class="current-info-header">
+                <div class="time-display" id="current-time">--:--</div>
+                <div class="location-badge">
+                    <span id="status-dot" class="status-dot status-offline" title="Offline Mode"></span>
+                    <i class="fas fa-map-marker-alt"></i> <span id="display-location">...</span>
+                </div>
+            </div>
+
+            <div class="current-task-indicator" id="current-task-box">
+                <div class="indicator-icon" id="task-icon-container">
+                    <i class="fas fa-coffee"></i>
+                </div>
+                <div class="indicator-content">
+                    <h4 data-i18n="currentTask">CURRENT TASK</h4>
+                    <div class="task-name" id="current-task-name">Free Time</div>
+                </div>
+            </div>
+
+            <div class="prayer-next-badge">
+                <span class="prayer-next-label"><i class="far fa-clock"></i> <span id="next-prayer-name">Next
+                        Prayer</span></span>
+                <span class="prayer-next-timer" id="prayer-countdown">--:--:--</span>
+            </div>
+        </div>
+
+        <!-- NEW CALENDAR STRIP -->
+        <div class="calendar-container">
+            <button class="cal-btn" id="prev-day-btn"><i class="fas fa-chevron-left"></i></button>
+            <div class="date-strip" id="date-strip">
+                <!-- Dates injected here by JS -->
+            </div>
+            <button class="cal-btn" id="next-day-btn"><i class="fas fa-chevron-right"></i></button>
+        </div>
+
+        <div class="action-bar">
+            <button id="add-block-btn" class="primary-btn">
+                <i class="fas fa-plus"></i> <span data-i18n="addTask">Add Task</span>
+            </button>
+        </div>
+
+        <section id="timeline-container">
+            <div class="section-header" style="margin-top: 24px;">
+                <h2 data-i18n="timeline">Timeline</h2>
+            </div>
+            <div id="prayer-blocks" class="timeline">
+            </div>
+        </section>
+    </div>
+
+    <!-- MODALS -->
+    <div id="modal-overlay" class="modal-overlay hidden"></div>
+
+    <!-- ADD TASK MODAL -->
+    <div id="add-block-modal" class="modal hidden">
+        <div class="modal-header">
+            <h3 data-i18n="addTask">Add Task</h3>
+            <button class="close-modal"><i class="fas fa-times"></i></button>
+        </div>
+        <form id="add-block-form">
+            <label data-i18n="titleLabel">Title</label>
+            <input type="text" id="block-title" required placeholder="e.g. Read Quran">
+
+            <label data-i18n="typeLabel">Activity Type</label>
+            <div class="type-selector">
+                <div class="type-option selected" data-value="work" style="--type-color: var(--color-work)">
+                    <span class="color-dot"></span> <span data-i18n="typeWork">Work</span>
+                </div>
+                <div class="type-option" data-value="study" style="--type-color: var(--color-study)">
+                    <span class="color-dot"></span> <span data-i18n="typeStudy">Study</span>
+                </div>
+                <div class="type-option" data-value="personal" style="--type-color: var(--color-personal)">
+                    <span class="color-dot"></span> <span data-i18n="typePersonal">Personal</span>
+                </div>
+                <div class="type-option" data-value="worship" style="--type-color: var(--color-worship)">
+                    <span class="color-dot"></span> <span data-i18n="typeWorship">Worship</span>
+                </div>
+                <div class="type-option" data-value="training" style="--type-color: var(--color-training)">
+                    <span class="color-dot"></span> <span data-i18n="typeTraining">Training</span>
+                </div>
+                <div class="type-option" data-value="hobby" style="--type-color: var(--color-hobby)">
+                    <span class="color-dot"></span> <span data-i18n="typeHobby">Hobby</span>
+                </div>
+                <div class="type-option" data-value="relaxing" style="--type-color: var(--color-relaxing)">
+                    <span class="color-dot"></span> <span data-i18n="typeRelaxing">Relaxing</span>
+                </div>
+                <div class="type-option" data-value="other" style="--type-color: var(--color-other)">
+                    <span class="color-dot"></span> <span data-i18n="typeOther">Other</span>
+                </div>
+                <input type="hidden" id="activity-type" value="work">
+            </div>
+
+            <div class="time-inputs">
+                <div>
+                    <label data-i18n="startLabel">Start</label>
+                    <input type="time" id="block-start" required>
+                </div>
+                <div>
+                    <label data-i18n="endLabel">End</label>
+                    <input type="time" id="block-end" required>
+                </div>
+            </div>
+
+            <button type="submit" id="submit-btn" class="primary-btn full-width" data-i18n="save">Save</button>
+        </form>
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div id="settings-modal" class="modal hidden">
+        <div class="modal-header">
+            <h3 data-i18n="settingsTitle">Settings</h3>
+            <button class="close-modal"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="settings-content">
+            <div class="setting-group">
+                <label data-i18n="language">Language</label>
+                <div class="lang-grid">
+                    <button class="lang-btn" data-lang="en">ENG</button>
+                    <button class="lang-btn" data-lang="tr">TUR</button>
+                    <button class="lang-btn" data-lang="ce">NOX</button>
+                    <button class="lang-btn" data-lang="ru">RUS</button>
+                    <button class="lang-btn" data-lang="ar">ARA</button>
+                </div>
+            </div>
+
+            <div class="setting-group" style="margin-top:20px;">
+                <label data-i18n="locationSetting">Location (Offline Presets)</label>
+                <div class="presets">
+                    <div class="preset-chip" onclick="setPreset(40.77, 30.40, 'Sakarya')">Sakarya</div>
+                    <div class="preset-chip" onclick="setPreset(41.00, 28.97, 'Istanbul')">Istanbul</div>
+                    <div class="preset-chip" onclick="setPreset(43.31, 45.69, 'Grozny')">Grozny</div>
+                    <div class="preset-chip" onclick="setPreset(51.16, 71.47, 'Astana')">Astana</div>
+                </div>
+                <div class="location-search-box">
+                    <input type="text" id="city-search" placeholder="Online search...">
+                    <button id="search-btn"><i class="fas fa-search"></i></button>
+                </div>
+                <ul id="search-results" class="hidden"></ul>
+            </div>
+
+            <div class="setting-group" style="margin-top:20px;">
+                <label data-i18n="calcMethod">Calculation Method</label>
+                <select id="calc-method">
+                    <option value="Turkey">Turkey (Diyanet)</option>
+                    <option value="MuslimWorldLeague">Muslim World League</option>
+                    <option value="NorthAmerica">ISNA (North America)</option>
+                    <option value="UmmAlQura">Umm Al-Qura (Makkah)</option>
+                    <option value="Egyptian">Egyptian Authority</option>
+                    <option value="Dubai">Dubai</option>
+                    <option value="Qatar">Qatar</option>
+                    <option value="Kuwait">Kuwait</option>
+                    <option value="Singapore">Singapore</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW DELETE CONFIRM MODAL -->
+    <div id="delete-modal" class="modal hidden">
+        <div class="modal-header">
+            <h3>Delete Task</h3>
+            <button class="close-modal"><i class="fas fa-times"></i></button>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 20px;">Are you sure you want to delete this task? This action
+            cannot be undone.</p>
+        <div class="btn-row">
+            <button id="cancel-delete" class="btn-cancel">Cancel</button>
+            <button id="confirm-delete" class="btn-confirm">Delete</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dictionary = {
+                en: {
+                    appTitle: "Muslim Focus", appSubtitle: "Structure your life around prayer",
+                    timeline: "Timeline", addTask: "Add Task", settingsTitle: "Settings",
+                    language: "Language", locationSetting: "Location", calcMethod: "Calculation Method",
+                    titleLabel: "Title", typeLabel: "Activity Type", startLabel: "Start", endLabel: "End",
+                    save: "Save", searchPlace: "Search city...",
+                    prayers: { Fajr: "Fajr", Sunrise: "Sunrise", Dhuhr: "Dhuhr", Asr: "Asr", Maghrib: "Maghrib", Isha: "Isha" },
+                    types: { work: "Work", study: "Study", personal: "Personal", worship: "Worship", training: "Training", hobby: "Hobby", relaxing: "Relaxing", other: "Other" },
+                    typeWork: "Work", typeStudy: "Study", typePersonal: "Personal", typeWorship: "Worship",
+                    typeTraining: "Training", typeHobby: "Hobby", typeRelaxing: "Relaxing", typeOther: "Other",
+                    freeTime: "Free Time", hours: "h", mins: "m", in: "in", left: "left",
+                    currentTask: "CURRENT TASK", nextPrayer: "NEXT PRAYER"
+                },
+                tr: {
+                    appTitle: "Müslüman Ajandası", appSubtitle: "Hayatınızı namaza göre düzenleyin",
+                    timeline: "Zaman Çizelgesi", addTask: "Görev Ekle", settingsTitle: "Ayarlar",
+                    language: "Dil", locationSetting: "Konum", calcMethod: "Hesaplama Yöntemi",
+                    titleLabel: "Başlık", typeLabel: "Aktivite Tipi", startLabel: "Başlangıç", endLabel: "Bitiş",
+                    save: "Kaydet", searchPlace: "Şehir ara...",
+                    prayers: { Fajr: "İmsak", Sunrise: "Güneş", Dhuhr: "Öğle", Asr: "İkindi", Maghrib: "Akşam", Isha: "Yatsı" },
+                    types: { work: "İş", study: "Ders", personal: "Kişisel", worship: "İbadet", training: "Antrenman", hobby: "Hobi", relaxing: "Dinlenme", other: "Diğer" },
+                    typeWork: "İş", typeStudy: "Ders", typePersonal: "Kişisel", typeWorship: "İbadet",
+                    typeTraining: "Antrenman", typeHobby: "Hobi", typeRelaxing: "Dinlenme", typeOther: "Diğer",
+                    freeTime: "Boş Zaman", hours: "s", mins: "dk", in: "kalan", left: "kaldı",
+                    currentTask: "ŞU ANKİ GÖREV", nextPrayer: "SONRAKİ NAMAZ"
+                },
+                ru: {
+                    appTitle: "Муслим Фокус", appSubtitle: "Планируй день вокруг намаза",
+                    timeline: "Расписание", addTask: "Добавить", settingsTitle: "Настройки",
+                    language: "Язык", locationSetting: "Местоположение", calcMethod: "Метод расчета",
+                    titleLabel: "Название", typeLabel: "Тип", startLabel: "Начало", endLabel: "Конец",
+                    save: "Сохранить", searchPlace: "Поиск города...",
+                    prayers: { Fajr: "Фаджр", Sunrise: "Восход", Dhuhr: "Зухр", Asr: "Аср", Maghrib: "Магриб", Isha: "Иша" },
+                    types: { work: "Работа", study: "Учеба", personal: "Личное", worship: "Ибадат", training: "Тренировка", hobby: "Хобби", relaxing: "Отдых", other: "Другое" },
+                    typeWork: "Работа", typeStudy: "Учеба", typePersonal: "Личное", typeWorship: "Ибадат",
+                    typeTraining: "Тренировка", typeHobby: "Хобби", typeRelaxing: "Отдых", typeOther: "Другое",
+                    freeTime: "Свободное время", hours: "ч", mins: "м", in: "через", left: "осталось",
+                    currentTask: "ТЕКУЩАЯ ЗАДАЧА", nextPrayer: "СЛЕДУЮЩИЙ НАМАЗ"
+                },
+                ar: {
+                    appTitle: "تركيز المسلم", appSubtitle: "نظم حياتك حول الصلاة",
+                    timeline: "الجدول الزمني", addTask: "إضافة مهمة", settingsTitle: "الإعدادات",
+                    language: "اللغة", locationSetting: "الموقع", calcMethod: "طريقة الحساب",
+                    titleLabel: "العنوان", typeLabel: "النوع", startLabel: "البدء", endLabel: "الانتهاء",
+                    save: "حفظ", searchPlace: "البحث عن مدينة...",
+                    prayers: { Fajr: "الفجر", Sunrise: "الشروق", Dhuhr: "الظهر", Asr: "العصر", Maghrib: "المغرب", Isha: "العشاء" },
+                    types: { work: "عمل", study: "دراسة", personal: "شخصي", worship: "عبادة", training: "تدريب", hobby: "هواية", relaxing: "راحة", other: "آخر" },
+                    typeWork: "عمل", typeStudy: "دراسة", typePersonal: "شخصي", typeWorship: "عبادة",
+                    typeTraining: "تدريب", typeHobby: "هواية", typeRelaxing: "راحة", typeOther: "آخر",
+                    freeTime: "وقت فراغ", hours: "س", mins: "د", in: "في", left: "متبقي",
+                    currentTask: "المهمة الحالية", nextPrayer: "الصلاة التالية"
+                },
+                ce: {
+                    appTitle: "Бусалбанан Хан", appSubtitle: "Хьан дахар ламазашца нисде",
+                    timeline: "Хан-хьесап", addTask: "ТIетоха", settingsTitle: "ГӀирсаш",
+                    language: "Мотт", locationSetting: "Меттиг", calcMethod: "Ламаз хан",
+                    titleLabel: "ЦӀе", typeLabel: "Тайпа", startLabel: "Йолалу хан", endLabel: "Чекхйолу хан",
+                    save: "Iалашде", searchPlace: "ГӀала лаха...",
+                    prayers: { Fajr: "Ӏуьйра", Sunrise: "Малх схьакхетар", Dhuhr: "Делкъа", Asr: "Малхбуза", Maghrib: "Маьркъа", Isha: "Пхьуьйра" },
+                    types: { work: "Болх", study: "Дешар", personal: "Долахь", worship: "Ӏибадат", training: "Спорт", hobby: "Хобби", relaxing: "СадаIар", other: "Кхин" },
+                    typeWork: "Болх", typeStudy: "Дешар", typePersonal: "Долахь", typeWorship: "Ӏибадат",
+                    typeTraining: "Спорт", typeHobby: "Хобби", typeRelaxing: "СадаIар", typeOther: "Кхин",
+                    freeTime: "Мукъа хан", hours: "сахьт", mins: "минот", in: "юьсу", left: "юьсу",
+                    currentTask: "КАРАРА ГӀУЛЛАКХ", nextPrayer: "ТӀЕЙОГӀУ ЛАМАЗ"
+                }
+            };
+
+            const typeColors = {
+                work: 'var(--color-work)',
+                study: 'var(--color-study)',
+                personal: 'var(--color-personal)',
+                worship: 'var(--color-worship)',
+                training: 'var(--color-training)',
+                hobby: 'var(--color-hobby)',
+                relaxing: 'var(--color-relaxing)',
+                other: 'var(--color-other)'
+            };
+
+            const typeIcons = {
+                work: 'fa-briefcase',
+                study: 'fa-book-open',
+                personal: 'fa-user',
+                worship: 'fa-kaaba',
+                training: 'fa-dumbbell',
+                hobby: 'fa-palette',
+                relaxing: 'fa-couch',
+                other: 'fa-circle'
+            };
+
+            const state = {
+                settings: JSON.parse(localStorage.getItem('appSettings')) || {
+                    lang: 'en',
+                    method: 'Turkey',
+                    apiMethod: 13,
+                    location: { lat: 40.77, lng: 30.40, name: "Sakarya, TR" }
+                },
+                blocks: JSON.parse(localStorage.getItem('timeBlocks')) || [],
+                prayers: {},
+                source: 'offline',
+                viewDate: new Date(), // Current viewed date
+                deleteId: null // ID to delete
+            };
+
+            const methodMapping = { 'Turkey': 13, 'MuslimWorldLeague': 3, 'NorthAmerica': 2, 'UmmAlQura': 4, 'Egyptian': 5, 'Dubai': 16, 'Qatar': 10, 'Kuwait': 9, 'Singapore': 11, 'Tehran': 7 };
+
+            const els = {
+                time: document.getElementById('current-time'),
+                countdown: document.getElementById('prayer-countdown'),
+                timeline: document.getElementById('prayer-blocks'),
+                locationDisplay: document.getElementById('display-location'),
+                statusDot: document.getElementById('status-dot'),
+                citySearch: document.getElementById('city-search'),
+                searchResults: document.getElementById('search-results'),
+                modal: document.getElementById('add-block-modal'),
+                settingsModal: document.getElementById('settings-modal'),
+                deleteModal: document.getElementById('delete-modal'),
+                overlay: document.getElementById('modal-overlay'),
+                langBtns: document.querySelectorAll('.lang-btn'),
+                calcSelect: document.getElementById('calc-method'),
+                typeOptions: document.querySelectorAll('.type-option'),
+                typeInput: document.getElementById('activity-type'),
+                dateStrip: document.getElementById('date-strip'),
+                currentTaskName: document.getElementById('current-task-name'),
+                currentTaskBox: document.getElementById('current-task-box'),
+                taskIconContainer: document.getElementById('task-icon-container'),
+                nextPrayerName: document.getElementById('next-prayer-name')
+            };
+
+            // ===========================
+            // HELPER: Date Strings
+            // ===========================
+            function getDateStr(date) {
+                return date.toISOString().split('T')[0];
+            }
+
+            // ===========================
+            // DATA LOGIC
+            // ===========================
+
+            function updatePrayerData() {
+                // 1. ALWAYS calculate offline first for INSTANT loading
+                try {
+                    calculatePrayersOffline();
+                    setSourceStatus('offline');
+                } catch (e) {
+                    console.log("Offline calc failed:", e);
+                }
+
+                // 2. If online, try to update with API in background
+                if (navigator.onLine) {
+                    fetchPrayersFromAPI().then(() => {
+                        setSourceStatus('online');
+                        console.log("Updated with API data");
+                    }).catch(e => {
+                        console.log("API fetch failed, sticking to offline data", e);
+                    });
+                }
+            }
+
+            function setSourceStatus(status) {
+                state.source = status;
+                els.statusDot.className = status === 'online' ? 'status-dot status-online' : 'status-dot status-offline';
+            }
+
+            async function fetchPrayersFromAPI() {
+                const { lat, lng } = state.settings.location;
+                const d = state.viewDate;
+                const methodId = methodMapping[state.settings.method] || 13;
+                const url = `https://api.aladhan.com/v1/timings/${d.getDate()}-${d.getMonth() + 1}-${d.getFullYear()}?latitude=${lat}&longitude=${lng}&method=${methodId}`;
+
+                const res = await fetch(url);
+                if (!res.ok) throw new Error("API Error");
+                const data = await res.json();
+                const timings = data.data.timings;
+                state.prayers = { Fajr: timings.Fajr, Sunrise: timings.Sunrise, Dhuhr: timings.Dhuhr, Asr: timings.Asr, Maghrib: timings.Maghrib, Isha: timings.Isha };
+                els.locationDisplay.textContent = state.settings.location.name;
+                renderTimeline();
+                updateCountdown();
+            }
+
+            function calculatePrayersOffline() {
+                if (typeof adhan === 'undefined') return;
+                const coordinates = new adhan.Coordinates(state.settings.location.lat, state.settings.location.lng);
+                const date = state.viewDate;
+                let params = adhan.CalculationMethod[state.settings.method] ? adhan.CalculationMethod[state.settings.method]() : adhan.CalculationMethod.Turkey();
+                const prayerTimes = new adhan.PrayerTimes(coordinates, date, params);
+                const fmt = (d) => d ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) : '--:--';
+
+                state.prayers = { Fajr: fmt(prayerTimes.fajr), Sunrise: fmt(prayerTimes.sunrise), Dhuhr: fmt(prayerTimes.dhuhr), Asr: fmt(prayerTimes.asr), Maghrib: fmt(prayerTimes.maghrib), Isha: fmt(prayerTimes.isha) };
+                els.locationDisplay.textContent = state.settings.location.name;
+                renderTimeline();
+                updateCountdown();
+            }
+
+            // ===========================
+            // UI LOGIC
+            // ===========================
+
+            function updateText() {
+                const t = dictionary[state.settings.lang];
+                document.documentElement.lang = state.settings.lang;
+                document.documentElement.dir = state.settings.lang === 'ar' ? 'rtl' : 'ltr';
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    const key = el.dataset.i18n;
+                    if (t[key]) el.textContent = t[key];
+                });
+                els.langBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.lang === state.settings.lang));
+                els.calcSelect.value = state.settings.method;
+                renderCalendar();
+                renderTimeline();
+            }
+
+            function saveState() {
+                localStorage.setItem('appSettings', JSON.stringify(state.settings));
+                localStorage.setItem('timeBlocks', JSON.stringify(state.blocks));
+            }
+
+            function timeToMins(t) {
+                if (!t) return 0;
+                const [h, m] = t.split(':').map(Number);
+                return h * 60 + m;
+            }
+
+            function minsToTime(m) {
+                const h = Math.floor(m / 60);
+                const min = m % 60;
+                return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+            }
+
+            // ===========================
+            // CALENDAR LOGIC
+            // ===========================
+
+            function renderCalendar() {
+                const strip = els.dateStrip;
+                strip.innerHTML = '';
+
+                const center = new Date(state.viewDate);
+                const start = new Date(center);
+                start.setDate(center.getDate() - 3);
+
+                for (let i = 0; i < 7; i++) {
+                    const d = new Date(start);
+                    d.setDate(start.getDate() + i);
+
+                    const dayName = d.toLocaleDateString(state.settings.lang, { weekday: 'short' });
+                    const dayNum = d.getDate();
+
+                    const el = document.createElement('div');
+                    el.className = `date-item ${getDateStr(d) === getDateStr(state.viewDate) ? 'active' : ''}`;
+                    el.innerHTML = `<span class="day-name">${dayName}</span><span class="day-num">${dayNum}</span>`;
+                    el.onclick = () => {
+                        state.viewDate = d;
+                        renderCalendar();
+                        updatePrayerData();
+                    };
+                    strip.appendChild(el);
+                }
+            }
+
+            document.getElementById('prev-day-btn').onclick = () => {
+                state.viewDate.setDate(state.viewDate.getDate() - 1);
+                renderCalendar(); updatePrayerData();
+            };
+            document.getElementById('next-day-btn').onclick = () => {
+                state.viewDate.setDate(state.viewDate.getDate() + 1);
+                renderCalendar(); updatePrayerData();
+            };
+
+            // ===========================
+            // RENDER TIMELINE
+            // ===========================
+            function renderTimeline() {
+                if (!state.prayers.Fajr) return;
+                els.timeline.innerHTML = '';
+                const t = dictionary[state.settings.lang];
+
+                const prayerOrder = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+                const sortedPrayers = prayerOrder.map(name => ({ name, time: state.prayers[name] })).filter(p => p.time && p.time !== '--:--');
+
+                const windows = [];
+                for (let i = 0; i < sortedPrayers.length; i++) {
+                    const current = sortedPrayers[i];
+                    const next = sortedPrayers[i + 1];
+                    windows.push({
+                        name: current.name,
+                        timeStr: current.time,
+                        start: timeToMins(current.time),
+                        end: next ? timeToMins(next.time) : 1440
+                    });
+                }
+
+                const dateKey = getDateStr(state.viewDate);
+                const daysBlocks = state.blocks.filter(b => b.date === dateKey || (!b.date && dateKey === getDateStr(new Date())));
+
+                const now = new Date();
+                const isToday = getDateStr(state.viewDate) === getDateStr(now);
+                const curMins = now.getHours() * 60 + now.getMinutes();
+
+                windows.forEach((period) => {
+                    const isCurrent = isToday && curMins >= period.start && curMins < period.end;
+                    const section = document.createElement('div');
+                    section.className = `prayer-section ${isCurrent ? 'current' : ''}`;
+
+                    const relevantTasks = daysBlocks.filter(b => {
+                        const tStart = timeToMins(b.startTime);
+                        const tEnd = timeToMins(b.endTime);
+                        return tStart < period.end && tEnd > period.start;
+                    }).sort((a, b) => timeToMins(a.startTime) - timeToMins(b.startTime));
+
+                    let tasksHtml = '';
+                    let lastOccupiedTime = period.start;
+
+                    relevantTasks.forEach(task => {
+                        const tStart = timeToMins(task.startTime);
+                        const tEnd = timeToMins(task.endTime);
+                        const sliceStart = Math.max(tStart, period.start);
+                        const sliceEnd = Math.min(tEnd, period.end);
+
+                        if (sliceStart - lastOccupiedTime >= 15) {
+                            const gap = sliceStart - lastOccupiedTime;
+                            const h = Math.floor(gap / 60);
+                            const m = gap % 60;
+                            tasksHtml += `<div class="free-time" onclick="openAddModal('${minsToTime(lastOccupiedTime)}', '${minsToTime(sliceStart)}')"><i class="far fa-clock"></i> ${t.freeTime}: ${h > 0 ? h + t.hours : ''} ${m}${t.mins}</div>`;
+                        }
+
+                        const icon = typeIcons[task.type] || 'fa-circle';
+                        tasksHtml += `
+            <div class="task-card ${task.done ? 'completed' : ''}" data-id="${task.id}" style="--task-color: ${typeColors[task.type]}">
+                <div class="checkbox-wrapper" onclick="toggleTask(${task.id})">
+                    <div class="custom-checkbox">${task.done ? '<i class="fas fa-check"></i>' : ''}</div>
+                </div>
+                <div class="task-info">
+                    <h4><i class="fas ${icon}" style="font-size:0.8em; margin-right:5px; color: var(--task-color)"></i> ${task.title}</h4>
+                    <span>${minsToTime(sliceStart)} - ${minsToTime(sliceEnd)} • ${t.types[task.type] || task.type}</span>
+                </div>
+                <div class="task-actions">
+                    <button onclick="askDelete(event, ${task.id})" class="delete"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>`;
+                        lastOccupiedTime = sliceEnd;
+                    });
+
+                    if (period.end - lastOccupiedTime >= 15) {
+                        const gap = period.end - lastOccupiedTime;
+                        const h = Math.floor(gap / 60);
+                        const m = gap % 60;
+                        tasksHtml += `<div class="free-time" onclick="openAddModal('${minsToTime(lastOccupiedTime)}', '${minsToTime(period.end)}')"><i class="far fa-clock"></i> ${t.freeTime}: ${h > 0 ? h + t.hours : ''} ${m}${t.mins}</div>`;
+                    }
+
+                    section.innerHTML = `
+        <div class="prayer-marker"></div>
+        <div class="prayer-title"><span>${t.prayers[period.name]}</span><span class="prayer-time-badge">${period.timeStr}</span></div>
+        <div class="tasks-container">${tasksHtml}</div>`;
+                    els.timeline.appendChild(section);
+                });
+            }
+
+            function updateCountdown() {
+                // Update Status Card - Current Task Logic
+                const now = new Date();
+                const curMins = now.getHours() * 60 + now.getMinutes();
+                const t = dictionary[state.settings.lang];
+
+                const dateKey = getDateStr(now);
+                // Find a task that covers current time
+                const currentTask = state.blocks.find(b => {
+                    if (b.date !== dateKey && b.date) return false;
+                    const start = timeToMins(b.startTime);
+                    const end = timeToMins(b.endTime);
+                    return curMins >= start && curMins < end;
+                });
+
+                if (currentTask) {
+                    els.currentTaskName.textContent = currentTask.title;
+                    els.currentTaskBox.classList.remove('free');
+                    els.currentTaskBox.style.borderLeftColor = typeColors[currentTask.type] || 'var(--primary)';
+                    els.taskIconContainer.style.color = typeColors[currentTask.type] || 'white';
+                    els.taskIconContainer.innerHTML = `<i class="fas ${typeIcons[currentTask.type] || 'fa-circle'}"></i>`;
+                } else {
+                    els.currentTaskName.textContent = t.freeTime;
+                    els.currentTaskBox.classList.add('free');
+                    els.currentTaskBox.style.borderLeftColor = 'var(--text-muted)';
+                    els.taskIconContainer.style.color = 'var(--text-muted)';
+                    els.taskIconContainer.innerHTML = `<i class="far fa-clock"></i>`;
+                }
+
+                // Prayer Countdown Logic
+                if (!state.prayers.Fajr) return;
+
+                const prayersList = [
+                    { name: t.prayers.Fajr, time: state.prayers.Fajr },
+                    { name: t.prayers.Sunrise, time: state.prayers.Sunrise },
+                    { name: t.prayers.Dhuhr, time: state.prayers.Dhuhr },
+                    { name: t.prayers.Asr, time: state.prayers.Asr },
+                    { name: t.prayers.Maghrib, time: state.prayers.Maghrib },
+                    { name: t.prayers.Isha, time: state.prayers.Isha }
+                ];
+
+                let nextPrayer = null;
+                let minDiff = Infinity;
+
+                prayersList.forEach(p => {
+                    if (p.time === '--:--' || !p.time) return;
+                    const [h, m] = p.time.split(':').map(Number);
+                    const pDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m);
+                    if (pDate < now) return; // passed
+                    const diff = pDate - now;
+                    if (diff < minDiff) {
+                        minDiff = diff;
+                        nextPrayer = p;
+                    }
+                });
+
+                if (!nextPrayer) {
+                    // Next is Fajr tomorrow
+                    nextPrayer = prayersList[0];
+                    // Logic simplistic for tomorrow, just shows name
+                }
+
+                if (nextPrayer) {
+                    els.nextPrayerName.textContent = nextPrayer.name;
+                    if (minDiff === Infinity) {
+                        els.countdown.textContent = "--:--:--";
+                    } else {
+                        const h = Math.floor(minDiff / (1000 * 60 * 60));
+                        const m = Math.floor((minDiff % (1000 * 60 * 60)) / (1000 * 60));
+                        const s = Math.floor((minDiff % (1000 * 60)) / 1000);
+                        els.countdown.textContent = `-${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+                    }
+                }
+            }
+
+            // ===========================
+            // INTERACTION
+            // ===========================
+
+            // Type Selection
+            els.typeOptions.forEach(opt => {
+                opt.addEventListener('click', () => {
+                    els.typeOptions.forEach(o => o.classList.remove('selected'));
+                    opt.classList.add('selected');
+                    els.typeInput.value = opt.dataset.value;
+                });
+            });
+
+            window.toggleTask = (id) => {
+                const block = state.blocks.find(b => b.id === id);
+                if (block) {
+                    block.done = !block.done;
+                    if (block.done) runConfetti();
+                    saveState();
+                    renderTimeline();
+                }
+            };
+
+            // DELETE MODAL LOGIC
+            window.askDelete = (event, id) => {
+                event.stopPropagation();
+                state.deleteId = id;
+                els.deleteModal.classList.remove('hidden');
+                els.overlay.classList.remove('hidden');
+            };
+
+            document.getElementById('confirm-delete').onclick = () => {
+                if (state.deleteId) {
+                    state.blocks = state.blocks.filter(b => b.id !== state.deleteId);
+                    saveState();
+                    renderTimeline();
+                }
+                closeAllModals();
+            };
+
+            document.getElementById('cancel-delete').onclick = closeAllModals;
+
+            window.openAddModal = (start, end) => {
+                document.getElementById('add-block-form').reset();
+                els.typeOptions.forEach(o => o.classList.remove('selected'));
+                els.typeOptions[0].classList.add('selected');
+                els.typeInput.value = 'work';
+                if (start) document.getElementById('block-start').value = start;
+                if (end) document.getElementById('block-end').value = end;
+                els.modal.classList.remove('hidden');
+                els.overlay.classList.remove('hidden');
+            };
+
+            window.setPreset = (lat, lng, name) => {
+                state.settings.location = { lat, lng, name };
+                saveState();
+                updatePrayerData();
+                els.searchResults.classList.add('hidden');
+            };
+
+            function closeAllModals() {
+                els.modal.classList.add('hidden');
+                els.settingsModal.classList.add('hidden');
+                els.deleteModal.classList.add('hidden');
+                els.overlay.classList.add('hidden');
+                state.deleteId = null;
+            }
+
+            document.getElementById('add-block-btn').onclick = () => window.openAddModal();
+            document.getElementById('settings-btn').onclick = () => { els.settingsModal.classList.remove('hidden'); els.overlay.classList.remove('hidden'); };
+            document.querySelectorAll('.close-modal, .modal-overlay').forEach(el => el.onclick = closeAllModals);
+
+            // FORM SUBMIT - SPLIT LOGIC
+            document.getElementById('add-block-form').onsubmit = (e) => {
+                e.preventDefault();
+                const title = document.getElementById('block-title').value;
+                const type = document.getElementById('activity-type').value;
+                const start = document.getElementById('block-start').value;
+                const end = document.getElementById('block-end').value;
+                const currentDateStr = getDateStr(state.viewDate);
+
+                const sMins = timeToMins(start);
+                const eMins = timeToMins(end);
+
+                if (eMins < sMins) {
+                    state.blocks.push({ id: Date.now(), date: currentDateStr, title, type, startTime: start, endTime: "23:59", done: false });
+                    const tmr = new Date(state.viewDate);
+                    tmr.setDate(tmr.getDate() + 1);
+                    state.blocks.push({ id: Date.now() + 1, date: getDateStr(tmr), title, type, startTime: "00:00", endTime: end, done: false });
+                } else {
+                    state.blocks.push({ id: Date.now(), date: currentDateStr, title, type, startTime: start, endTime: end, done: false });
+                }
+
+                saveState();
+                renderTimeline();
+                closeAllModals();
+            };
+
+            els.langBtns.forEach(btn => {
+                btn.onclick = () => { state.settings.lang = btn.dataset.lang; saveState(); updateText(); };
+            });
+
+            els.calcSelect.onchange = (e) => { state.settings.method = e.target.value; saveState(); updatePrayerData(); };
+
+            function runConfetti() {
+                const cnt = 20;
+                for (let i = 0; i < cnt; i++) {
+                    const el = document.createElement('div');
+                    el.innerHTML = '✨';
+                    el.style.position = 'fixed';
+                    el.style.left = '50%'; el.style.top = '50%';
+                    el.style.transform = `translate(-50%, -50%)`;
+                    el.style.fontSize = '20px'; el.style.pointerEvents = 'none'; el.style.zIndex = '9999';
+                    document.body.appendChild(el);
+                    const angle = Math.random() * Math.PI * 2;
+                    const vel = 5 + Math.random() * 10;
+                    const dx = Math.cos(angle) * vel;
+                    const dy = Math.sin(angle) * vel;
+                    let x = 0, y = 0;
+                    const anim = setInterval(() => {
+                        x += dx; y += dy;
+                        el.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
+                        el.style.opacity = parseFloat(el.style.opacity || 1) - 0.04;
+                        if (el.style.opacity <= 0) { clearInterval(anim); el.remove(); }
+                    }, 16);
+                }
+            }
+
+            setInterval(() => {
+                const now = new Date();
+                els.time.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                updateCountdown();
+            }, 1000);
+
+            updateText();
+            updatePrayerData();
+        });
+    </script>
+</body>
+
+</html>
